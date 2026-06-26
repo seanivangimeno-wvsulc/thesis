@@ -13,7 +13,7 @@ import {
   Menu, X
 } from 'lucide-react';
 import LucideIcon from './components/LucideIcon';
-
+import { supabase } from './lib/supabase';
 // Multi-language Translation Dictionary
 const translations = {
   en: {
@@ -479,15 +479,29 @@ export default function App() {
       }
     }
 
-    const allApps = localStorage.getItem('mswdo_applications');
-    if (allApps) {
-      try {
-        setApplications(JSON.parse(allApps));
-      } catch (err) {
-        console.error('Failed to parse applications from localStorage:', err);
-        localStorage.removeItem('mswdo_applications');
+    const fetchApplications = async () => {
+      const { data, error } = await supabase.from('applications').select('*');
+      if (error) {
+        console.error('Failed to fetch applications from Supabase:', error);
+      } else if (data) {
+        const mappedApps = data.map(app => ({
+          id: app.id,
+          userId: app.user_id,
+          applicantName: app.applicant_name,
+          applicantEmail: app.applicant_email,
+          applicantPhone: app.applicant_phone,
+          assistanceType: app.assistance_type,
+          justification: app.justification,
+          householdMembers: app.household_members,
+          documents: app.documents,
+          status: app.status,
+          submissionDate: app.submission_date,
+          controlNumber: app.control_number
+        }));
+        setApplications(mappedApps);
       }
-    }
+    };
+    fetchApplications();
 
     // Dynamically inject Elfsight platform script
     const script = document.createElement('script');
@@ -505,10 +519,9 @@ export default function App() {
     };
   }, []);
 
-  // Sync applications state to localStorage whenever changed
+  // Update applications state locally
   const saveApplications = (updatedApps: AICSApplication[]) => {
     setApplications(updatedApps);
-    localStorage.setItem('mswdo_applications', JSON.stringify(updatedApps));
   };
 
   const handleAuthSuccess = (user: User) => {
@@ -548,7 +561,18 @@ export default function App() {
     setActiveTab('history');
   };
 
-  const handleStatusUpdate = (appId: string, newStatus: AICSApplication['status'], notes?: string) => {
+  const handleStatusUpdate = async (appId: string, newStatus: AICSApplication['status'], notes?: string) => {
+    const { error } = await supabase
+      .from('applications')
+      .update({ status: newStatus })
+      .eq('id', appId);
+
+    if (error) {
+      console.error('Failed to update status in Supabase:', error);
+      showToast('Failed to update status', 'error');
+      return;
+    }
+
     const updated = applications.map(app => {
       if (app.id === appId) {
         return {

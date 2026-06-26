@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { User } from '../types';
 import { X, Lock, Mail, User as UserIcon, Phone, MapPin, Calendar, Heart, ShieldCheck, ArrowRight } from 'lucide-react';
-
+import { supabase } from '../lib/supabase';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -26,7 +26,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
 
   if (!isOpen) return null;
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -35,19 +35,19 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       return;
     }
 
-    // Retrieve users from localStorage
-    const storedUsers = localStorage.getItem('mswdo_users');
-    let usersList: any[] = [];
-    if (storedUsers) {
-      try {
-        usersList = JSON.parse(storedUsers);
-      } catch (err) {
-        console.error('Failed to parse users from localStorage during login:', err);
-      }
+    // Retrieve users from Supabase
+    const { data: usersList, error: fetchError } = await supabase
+      .from('users')
+      .select('*')
+      .ilike('email', email);
+
+    if (fetchError) {
+      console.error('Failed to fetch user from Supabase:', fetchError);
+      setError('An error occurred during login. Please try again.');
+      return;
     }
 
-    // Find user
-    const userMatch = usersList.find(u => u.email.toLowerCase() === email.toLowerCase());
+    const userMatch = usersList && usersList.length > 0 ? usersList[0] : null;
 
     if (!userMatch) {
       setError('No account found with this email. Please register first.');
@@ -69,7 +69,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
         phone: userMatch.phone,
         address: userMatch.address,
         birthdate: userMatch.birthdate,
-        civilStatus: userMatch.civilStatus
+        civilStatus: userMatch.civil_status
       });
       onClose();
       // Reset states
@@ -79,7 +79,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
     }, 1000);
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -94,20 +94,19 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
       return;
     }
 
-    // Retrieve users from localStorage
-    const storedUsers = localStorage.getItem('mswdo_users');
-    let usersList: any[] = [];
-    if (storedUsers) {
-      try {
-        usersList = JSON.parse(storedUsers);
-      } catch (err) {
-        console.error('Failed to parse users from localStorage during registration:', err);
-      }
+    // Check if email already exists
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('id')
+      .ilike('email', email);
+
+    if (checkError) {
+      console.error('Failed to check existing user:', checkError);
+      setError('An error occurred. Please try again.');
+      return;
     }
 
-    // Check if email already exists
-    const emailExists = usersList.some(u => u.email.toLowerCase() === email.toLowerCase());
-    if (emailExists) {
+    if (existingUser && existingUser.length > 0) {
       setError('An account with this email already exists. Please login.');
       return;
     }
@@ -116,17 +115,24 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
     const newUser = {
       id: 'usr_' + Math.random().toString(36).substr(2, 9),
       name,
-      email,
+      email: email.toLowerCase(),
       phone,
       address,
       birthdate,
-      civilStatus,
-      password // Securely stored in mock client db
+      civil_status: civilStatus,
+      password // Plain text for mock behavior compatibility
     };
 
     // Save to database
-    usersList.push(newUser);
-    localStorage.setItem('mswdo_users', JSON.stringify(usersList));
+    const { error: insertError } = await supabase
+      .from('users')
+      .insert([newUser]);
+
+    if (insertError) {
+      console.error('Failed to save user to Supabase:', insertError);
+      setError('Failed to register. Please try again.');
+      return;
+    }
 
     setSuccess('Registration successful! Logging you in...');
     setTimeout(() => {
@@ -137,7 +143,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess, initialTab =
         phone: newUser.phone,
         address: newUser.address,
         birthdate: newUser.birthdate,
-        civilStatus: newUser.civilStatus
+        civilStatus: civilStatus
       });
       onClose();
       // Reset states

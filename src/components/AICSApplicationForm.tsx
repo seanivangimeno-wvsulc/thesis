@@ -4,6 +4,7 @@ import {
   FileText, Users, UploadCloud, CheckCircle2, ClipboardCheck, 
   Trash2, Plus, ArrowLeft, ArrowRight, Eye, ShieldAlert, FileType, Check, X 
 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface AICSApplicationFormProps {
   currentUser: User;
@@ -387,42 +388,55 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
     setStep(prev => prev - 1);
   };
 
-  const handleSubmitApplication = () => {
+  const handleSubmitApplication = async () => {
     if (!validateStep(3)) return;
 
     const year = new Date().getFullYear();
     const rand = Math.floor(100000 + Math.random() * 900000);
     const controlNumber = `AICS-${year}-${rand}`;
 
-    const newApplication: AICSApplication = {
+    const newApplication = {
       id: 'app_' + Math.random().toString(36).substr(2, 9),
-      userId: currentUser.id,
-      applicantName: currentUser.name,
-      applicantEmail: currentUser.email,
-      applicantPhone: currentUser.phone,
-      assistanceType,
+      user_id: currentUser.id,
+      applicant_name: currentUser.name,
+      applicant_email: currentUser.email,
+      applicant_phone: currentUser.phone,
+      assistance_type: assistanceType,
       justification,
-      householdMembers,
+      household_members: householdMembers,
       documents: Object.values(uploadedDocs),
       status: 'Pending Review',
-      submissionDate: new Date().toISOString(),
-      controlNumber
+      submission_date: new Date().toISOString(),
+      control_number: controlNumber
     };
 
-    const storedApps = localStorage.getItem('mswdo_applications');
-    let appsList: AICSApplication[] = [];
-    if (storedApps) {
-      try {
-        appsList = JSON.parse(storedApps);
-      } catch (err) {
-        console.error('Failed to parse applications from localStorage during submission:', err);
-      }
+    const { error: insertError } = await supabase
+      .from('applications')
+      .insert([newApplication]);
+
+    if (insertError) {
+      console.error('Failed to submit application to Supabase:', insertError);
+      setError('Failed to submit application. Please try again.');
+      return;
     }
-    appsList.push(newApplication);
-    localStorage.setItem('mswdo_applications', JSON.stringify(appsList));
+
+    const returnedApp: AICSApplication = {
+      id: newApplication.id,
+      userId: newApplication.user_id,
+      applicantName: newApplication.applicant_name,
+      applicantEmail: newApplication.applicant_email,
+      applicantPhone: newApplication.applicant_phone,
+      assistanceType: newApplication.assistance_type as AssistanceType,
+      justification: newApplication.justification,
+      householdMembers: newApplication.household_members,
+      documents: newApplication.documents,
+      status: newApplication.status as AICSApplication['status'],
+      submissionDate: newApplication.submission_date,
+      controlNumber: newApplication.control_number
+    };
 
     localStorage.removeItem(`mswdo_draft_form_${currentUser.id}`);
-    onSubmitSuccess(newApplication);
+    onSubmitSuccess(returnedApp);
   };
 
   const stepLabels = [
