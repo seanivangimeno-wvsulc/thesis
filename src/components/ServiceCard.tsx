@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ServiceInfo } from '../types';
+import { ServiceInfo } from '../types/types';
 import LucideIcon from './LucideIcon';
 import { Check, ClipboardList, Info, HelpCircle, ArrowRight } from 'lucide-react';
 

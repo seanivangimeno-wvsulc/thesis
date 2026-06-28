@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import { User, AICSApplication } from '../types';
+import { User, AICSApplication } from '../types/types';
 
 /**
  * USERS API

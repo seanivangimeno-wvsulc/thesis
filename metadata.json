@@ -1,6 +1,0 @@
-{
-  "name": "MSWDO Client Portal",
-  "description": "An online portal for MSWDO clients to learn about social assistance programs (AICS, PWD, Senior Citizens, Solo Parents) and apply for Assistance in Crisis Situations (AICS) with secure document uploads.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

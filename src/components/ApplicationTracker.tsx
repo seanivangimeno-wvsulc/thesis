@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AICSApplication, UploadedRequirement } from '../types';
+import { AICSApplication, UploadedRequirement } from '../types/types';
 import { 
   FileCheck, Calendar, Phone, Mail, MapPin, Eye, FileText, CheckCircle2, 
   Clock, AlertCircle, RefreshCw, X, ArrowUpRight, HelpCircle, UserCheck
@@ -400,51 +400,6 @@ export default function ApplicationTracker({ applications, onStatusUpdate, langu
                     </button>
                   </div>
                 ))}
-              </div>
-            </div>
-
-            {/* Reviewer simulation control panel */}
-            <div className="pt-6 border-t border-dashed border-slate-200 dark:border-slate-800">
-              <div className="p-4 bg-blue-500/5 rounded-2xl border border-blue-500/10 flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="text-left">
-                  <h4 className="text-xs font-black text-blue-900 dark:text-blue-300 flex items-center gap-1.5 uppercase tracking-wide">
-                    <UserCheck size={14} /> {t.sandboxTitle}
-                  </h4>
-                  <p className="text-[10px] text-blue-700 dark:text-blue-400 mt-1">
-                    {t.sandboxDesc}
-                  </p>
-                </div>
-                
-                <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-                  <select
-                    value={simStatus}
-                    onChange={(e: any) => setSimStatus(e.target.value)}
-                    className="px-2 py-1.5 text-xs border border-blue-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg focus:outline-hidden text-slate-800 dark:text-slate-100 font-bold"
-                  >
-                    <option value="Pending Review">Pending Review</option>
-                    <option value="Document Verification">Document Verification</option>
-                    <option value="Interview Scheduled">Interview Scheduled</option>
-                    <option value="Approved">Approved</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Rejected">Rejected</option>
-                  </select>
-                  <input
-                    type="text"
-                    value={simNotes}
-                    onChange={(e) => setSimNotes(e.target.value)}
-                    placeholder={t.addNotePlaceholder}
-                    className="px-2 py-1.5 text-xs border border-blue-200 dark:border-slate-800 bg-white dark:bg-slate-900 rounded-lg focus:outline-hidden text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 flex-1 sm:flex-none min-w-[150px] font-medium"
-                  />
-                  <button
-                    onClick={() => {
-                      onStatusUpdate(activeApp.id, simStatus, simNotes);
-                      setSimNotes('');
-                    }}
-                    className="px-3 py-1.5 bg-blue-700 hover:bg-blue-800 text-white font-extrabold text-xs rounded-lg transition-colors flex items-center gap-1 cursor-pointer shrink-0"
-                  >
-                    <RefreshCw size={11} /> {t.updateBtn}
-                  </button>
-                </div>
               </div>
             </div>
           </div>

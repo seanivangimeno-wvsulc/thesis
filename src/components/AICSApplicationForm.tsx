@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { User, AICSApplication, HouseholdMember, UploadedRequirement, AssistanceType } from '../types';
+import { User, AICSApplication, HouseholdMember, UploadedRequirement, AssistanceType } from '../types/types';
 import { 
   FileText, Users, UploadCloud, CheckCircle2, ClipboardCheck, 
   Trash2, Plus, ArrowLeft, ArrowRight, Eye, ShieldAlert, FileType, Check, X 

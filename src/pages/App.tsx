@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { User, AICSApplication, AssistanceType } from './types';
-import { servicesData } from './data/servicesData';
-import PortalHeader from './components/PortalHeader';
-import ServiceCard from './components/ServiceCard';
-import AuthModal from './components/AuthModal';
-import AICSApplicationForm from './components/AICSApplicationForm';
-import ApplicationTracker from './components/ApplicationTracker';
+import { User, AICSApplication, AssistanceType } from '../types/types';
+import { servicesData } from '../data/servicesData';
+import PortalHeader from '../components/PortalHeader';
+import ServiceCard from '../components/ServiceCard';
+import AuthModal from '../components/AuthModal';
+import AICSApplicationForm from '../components/AICSApplicationForm';
+import ApplicationTracker from '../components/ApplicationTracker';
 import { 
   Landmark, Activity, Award, Users, HeartHandshake, LogIn, LogOut, 
   User as UserIcon, ClipboardList, CheckCircle2, ShieldAlert, ChevronRight, 
   Info, Sparkles, MessageSquare, ArrowRight, BookOpen, ChevronDown, Phone, Mail, Clock,
   Menu, X
 } from 'lucide-react';
-import LucideIcon from './components/LucideIcon';
-import { supabase } from './lib/supabase';
+import LucideIcon from '../components/LucideIcon';
+import { supabase } from '../lib/supabase';
 // Multi-language Translation Dictionary
 const translations = {
   en: {
@@ -463,6 +463,7 @@ export default function App() {
 
     const handleRejection = (event: PromiseRejectionEvent) => {
       event.preventDefault();
+      localStorage.removeItem('mswdo_active_user');
       return true;
     };
 
@@ -479,28 +480,6 @@ export default function App() {
       }
     }
 
-    const fetchApplications = async () => {
-      const { data, error } = await supabase.from('applications').select('*');
-      if (error) {
-        console.error('Failed to fetch applications from Supabase:', error);
-      } else if (data) {
-        const mappedApps = data.map(app => ({
-          id: app.id,
-          userId: app.user_id,
-          applicantName: app.applicant_name,
-          applicantEmail: app.applicant_email,
-          applicantPhone: app.applicant_phone,
-          assistanceType: app.assistance_type,
-          justification: app.justification,
-          householdMembers: app.household_members,
-          documents: app.documents,
-          status: app.status,
-          submissionDate: app.submission_date,
-          controlNumber: app.control_number
-        }));
-        setApplications(mappedApps);
-      }
-    };
     fetchApplications();
 
     // Dynamically inject Elfsight platform script
@@ -520,6 +499,28 @@ export default function App() {
   }, []);
 
   // Update applications state locally
+  const fetchApplications = async () => {
+    const { data, error } = await supabase.from('applications').select('*');
+    if (error) {
+      console.error('Failed to fetch applications from Supabase:', error);
+    } else if (data) {
+      const mappedApps = data.map(app => ({
+        id: app.id,
+        userId: app.user_id,
+        applicantName: app.applicant_name,
+        applicantEmail: app.applicant_email,
+        applicantPhone: app.applicant_phone,
+        assistanceType: app.assistance_type,
+        justification: app.justification,
+        householdMembers: app.household_members,
+        documents: app.documents,
+        status: app.status,
+        submissionDate: app.submission_date,
+        controlNumber: app.control_number,
+      }));
+      setApplications(mappedApps);
+    }
+  };
   const saveApplications = (updatedApps: AICSApplication[]) => {
     setApplications(updatedApps);
   };
@@ -527,7 +528,9 @@ export default function App() {
   const handleAuthSuccess = (user: User) => {
     setCurrentUser(user);
     localStorage.setItem('mswdo_active_user', JSON.stringify(user));
+    fetchApplications();
     showToast(`Successfully logged in as ${user.name}!`, 'success');
+    setActiveTab('history');
   };
 
   const handleLogout = () => {
@@ -555,8 +558,7 @@ export default function App() {
   };
 
   const handleApplicationSubmit = (newApp: AICSApplication) => {
-    const updated = [...applications, newApp];
-    saveApplications(updated);
+    fetchApplications();
     showToast('AICS Application Submitted Successfully!', 'success');
     setActiveTab('history');
   };
@@ -751,12 +753,14 @@ export default function App() {
                         : 'border-transparent text-blue-200 hover:text-white'
                     }`}
                   >
-                    {translations[language].myApplications}
-                    {userApplications.length > 0 && (
-                      <span className="absolute -top-2.5 -right-4 px-1.5 py-0.5 rounded-full bg-blue-500 text-white text-[9px] font-extrabold shadow-sm">
-                        {userApplications.length}
-                      </span>
-                    )}
+                    <span className="relative inline-block">
+                      {translations[language].myApplications}
+                      {userApplications.length > 0 && (
+                        <span className="absolute -top-2.5 -right-3 px-1.5 py-0.5 rounded-full bg-blue-500 text-white text-[9px] font-extrabold shadow-sm">
+                          {userApplications.length}
+                        </span>
+                      )}
+                    </span>
                   </button>
                 </>
               )}
@@ -1020,11 +1024,18 @@ export default function App() {
                           <div className="p-1 bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 rounded-md shrink-0 mt-0.5">
                             <CheckCircle2 size={12} />
                           </div>
-                          <div>
-                            <p className="font-bold text-[11px] leading-tight text-slate-850 dark:text-slate-200">
-                              {translations[language].myApplications}
-                            </p>
-                            <p className="text-[9px] text-slate-400">Track and monitor requests</p>
+                          <div className="flex-1 flex justify-between items-center">
+                            <div>
+                              <p className="font-bold text-[11px] leading-tight text-slate-850 dark:text-slate-200">
+                                {translations[language].myApplications}
+                              </p>
+                              <p className="text-[9px] text-slate-400">Track and monitor requests</p>
+                            </div>
+                            {userApplications.length > 0 && (
+                              <span className="bg-blue-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm ml-2">
+                                {userApplications.length}
+                              </span>
+                            )}
                           </div>
                         </button>
                       </div>
