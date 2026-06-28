@@ -453,6 +453,8 @@ export default function App() {
 
   // Load user session and applications on mount, along with Elfsight script
   useEffect(() => {
+    
+
     // Graceful error handling for third-party scripts (e.g. Elfsight CORS/Sandbox errors)
     const handleGlobalError = (event: ErrorEvent) => {
       if (event.message === 'Script error.' || !event.filename || !event.filename.includes(window.location.origin)) {
@@ -470,18 +472,6 @@ export default function App() {
     window.addEventListener('error', handleGlobalError);
     window.addEventListener('unhandledrejection', handleRejection);
 
-    const activeUser = localStorage.getItem('mswdo_active_user');
-    if (activeUser) {
-      try {
-        setCurrentUser(JSON.parse(activeUser));
-      } catch (err) {
-        console.error('Failed to parse active user from localStorage:', err);
-        localStorage.removeItem('mswdo_active_user');
-      }
-    }
-
-    fetchApplications();
-
     // Dynamically inject Elfsight platform script
     const script = document.createElement('script');
     script.src = 'https://elfsightcdn.com/platform.js';
@@ -498,9 +488,12 @@ export default function App() {
     };
   }, []);
 
-  // Update applications state locally
-  const fetchApplications = async () => {
-    const { data, error } = await supabase.from('applications').select('*');
+  // Update applications state locally — filtered by userId at the database level
+  const fetchApplications = async (userId: string) => {
+    const { data, error } = await supabase
+      .from('applications')
+      .select('*')
+      .eq('user_id', userId);
     if (error) {
       console.error('Failed to fetch applications from Supabase:', error);
     } else if (data) {
@@ -516,7 +509,7 @@ export default function App() {
         documents: app.documents,
         status: app.status,
         submissionDate: app.submission_date,
-        controlNumber: app.control_number,
+        controlNumber: app.control_number
       }));
       setApplications(mappedApps);
     }
@@ -528,13 +521,13 @@ export default function App() {
   const handleAuthSuccess = (user: User) => {
     setCurrentUser(user);
     localStorage.setItem('mswdo_active_user', JSON.stringify(user));
-    fetchApplications();
     showToast(`Successfully logged in as ${user.name}!`, 'success');
     setActiveTab('history');
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    setApplications([]); // Clear so another user can't see previous user's apps
     localStorage.removeItem('mswdo_active_user');
     showToast('You have been logged out of your account.', 'info');
     setActiveTab('home');
@@ -558,7 +551,7 @@ export default function App() {
   };
 
   const handleApplicationSubmit = (newApp: AICSApplication) => {
-    fetchApplications();
+    if (currentUser) fetchApplications(currentUser.id); // Re-fetch only this user's apps
     showToast('AICS Application Submitted Successfully!', 'success');
     setActiveTab('history');
   };
