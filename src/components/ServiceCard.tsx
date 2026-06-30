@@ -29,7 +29,7 @@ export default function ServiceCard({ service, onApplyClick }: ServiceCardProps)
           </span>
         </div>
 
-        <h3 className="text-lg font-bold text-slate-900 mt-4 leading-tight">
+        <h3 className="text-lg font-bold text-slate-900 mt-4 leading-tight dark:text-white">
           {service.fullName}
         </h3>
         <p className="text-xs text-slate-500 mt-2 leading-relaxed">
@@ -51,7 +51,7 @@ export default function ServiceCard({ service, onApplyClick }: ServiceCardProps)
             {service.id === 'aics' && onApplyClick && (
               <button
                 onClick={() => onApplyClick()}
-                className="px-4 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg flex items-center gap-1 shadow-xs transition-colors cursor-pointer"
+                className="px-4 py-1.5 hover:bg-slate-800 text-xs font-bold rounded-lg flex items-center gap-1 shadow-xs transition-colors cursor-pointer dark:text-white text-slate-900 dark:bg-slate-900 bg-white"
               >
                 Apply Online <ArrowRight size={12} />
               </button>
@@ -61,7 +61,7 @@ export default function ServiceCard({ service, onApplyClick }: ServiceCardProps)
           <div className="pt-5 space-y-5">
             {/* Eligibility criteria */}
             <div className="space-y-2">
-              <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
+              <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider dark:text-white">
                 <HelpCircle size={14} className="text-blue-600" />
                 How to Qualify (Eligibility)
               </h4>
@@ -77,13 +77,13 @@ export default function ServiceCard({ service, onApplyClick }: ServiceCardProps)
 
             {/* Application checklist */}
             <div className="space-y-2 pt-3 border-t border-slate-150">
-              <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider">
+              <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5 uppercase tracking-wider dark:text-white">
                 <ClipboardList size={14} className="text-blue-700" />
                 Required Documents Checklist
               </h4>
               <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 pl-1">
                 {service.requirements.map((req, idx) => (
-                  <li key={idx} className="text-[11px] text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 flex items-start gap-1.5">
+                  <li key={idx} className="text-[11px] text-slate-600 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 flex items-start gap-1.5 dark:bg-slate-950 dark:border-slate-800">
                     <span className="w-1.5 h-1.5 rounded-full bg-blue-700 shrink-0 mt-1.5" />
                     <span>{req}</span>
                   </li>
@@ -103,12 +103,12 @@ export default function ServiceCard({ service, onApplyClick }: ServiceCardProps)
               {service.id === 'aics' && onApplyClick ? (
                 <button
                   onClick={() => onApplyClick()}
-                  className="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-extrabold rounded-lg flex items-center gap-1 shadow-md shadow-blue-700/15 transition-colors cursor-pointer"
+                  className="px-5 py-2 bg-blue-700 hover:bg-blue-800 text-xs font-extrabold rounded-lg flex items-center gap-1 shadow-md shadow-blue-700/15 transition-colors cursor-pointer dark:text-white text-slate-900"
                 >
                   Apply Online Now <ArrowRight size={13} />
                 </button>
               ) : (
-                <span className="text-[10px] text-slate-400 font-bold bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200 uppercase tracking-wide">
+                <span className="text-[10px] font-bold bg-slate-50 px-2.5 py-1 rounded-md border border-slate-200 uppercase tracking-wide dark:text-slate-400 text-slate-500 dark:bg-slate-950 dark:border-slate-800">
                   Physical submission at MSWDO Office
                 </span>
               )}

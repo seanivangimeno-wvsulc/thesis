@@ -44,12 +44,18 @@ export interface AICSApplication {
   applicantName: string;
   applicantEmail: string;
   applicantPhone: string;
+  applicantAddress: string;
+  applicantBirthdate: string;
+  applicantCivilStatus: string;
   assistanceType: AssistanceType;
-  justification: string;
+  justification?: string;
   householdMembers: HouseholdMember[];
   documents: UploadedRequirement[];
   status: 'Pending Review' | 'Document Verification' | 'Interview Scheduled' | 'Approved' | 'Completed' | 'Rejected';
   statusNotes?: string;
   submissionDate: string;
   controlNumber: string;
+  clienteleCategories?: string[];
+  impressionFindings?: string;
+  recommendation?: string;
 }

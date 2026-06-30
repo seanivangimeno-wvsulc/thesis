@@ -25,10 +25,6 @@ const FORM_TRANSLATIONS = {
     aicsApp: "AICS Assistance Application",
     assistanceRequiredTitle: "1. Select the Type of Assistance Required",
     assistanceRequiredDesc: "Choose the program that best matches your immediate crisis. You will need to upload specific supporting files based on this selection.",
-    explainEmergency: "2. Explain Your Emergency / Reason for Request *",
-    explainEmergencyDesc: "Provide a detailed description of the crisis or emergency situation. Describe why your family requires immediate support. (Minimum 20 characters)",
-    explainPlaceholder: "Describe what happened, current health/medical condition, school requirements, or financial distress. Please be precise so social workers can evaluate your case fairly.",
-    charMin: "characters (min 20)",
     householdTitle: "Household Composition & Income",
     householdDesc: "Add the members of your immediate household (spouse, children, parents, dependents living under your roof) and their respective occupations or sources of income.",
     fullName: "Full Name",
@@ -64,7 +60,6 @@ const FORM_TRANSLATIONS = {
     assistanceProgramLabel: "Assistance Program",
     phoneLabel: "Phone Number",
     addressLabel: "Residential Address",
-    reasonLabel: "Reason / Justification",
     summaryLabel: "Household & Financial Summary",
     memberCol: "Family Member",
     relCol: "Relationship",
@@ -79,9 +74,25 @@ const FORM_TRANSLATIONS = {
     downloadPdf: "Download PDF to View",
     pdfUploaded: "Uploaded PDF File",
     missingUploadErr: "Please upload all required digital documents before continuing. Missing:",
-    justificationErr: "Please explain your situation/justification in more detail (minimum 20 characters). This is required for review.",
     householdErr: "Please add at least one household member (including yourself or dependents) to reflect household composition.",
-    addMemberErr: "Please provide Name, Age, and Relationship to add a member."
+    addMemberErr: "Please provide Name, Age, and Relationship to add a member.",
+    clienteleCategory: "Clientele Category (Please Check)",
+    fhona: "FHONA",
+    wedc: "WEDC",
+    pwd: "PWD",
+    soloParent: "Solo Parent",
+    seniorCitizen: "Senior Citizen",
+    disasterVictim: "Disaster Victim",
+    deporteesStandees: "Deportees/Standees",
+    slp: "SLP",
+    cnsp: "CNSP",
+    yoCicl: "Y.O/CICL",
+    others: "Others",
+    fr: "FR",
+    impressionFindings: "IV. IMPRESSION/FINDINGS",
+    recommendationLabel: "V. RECOMMENDATION",
+    signatureClient: "CLIENT",
+    signaturePreparedBy: "Prepared by"
   },
   fil: {
     step: "Hakbang",
@@ -94,10 +105,6 @@ const FORM_TRANSLATIONS = {
     aicsApp: "Aplikasyon para sa Tulong ng AICS",
     assistanceRequiredTitle: "1. Piliin ang Uri ng Tulong na Kailangan",
     assistanceRequiredDesc: "Piliin ang programang pinaka-angkop sa inyong kasalukuyang krisis. Kakailanganin mong mag-upload ng mga sumusuportang dokumento batay dito.",
-    explainEmergency: "2. Ipaliwanag ang Inyong Emerhensya / Dahilan ng Kahilingan *",
-    explainEmergencyDesc: "Magbigay ng detalyadong paglalarawan ng krisis o sitwasyon ng emerhensya. Ipaliwanag kung bakit nangangailangan ng agarang tulong ang inyong pamilya (Hindi bababa sa 20 karakter).",
-    explainPlaceholder: "Ilarawan ang nangyari, kasalukuyang kalagayan ng kalusugan, pangangailangan sa paaralan, o pinansyal na kagipitan. Maging tiyak upang masuri nang patas ng mga social worker ang inyong kaso.",
-    charMin: "karakter (min 20)",
     householdTitle: "Komposisyon ng Sambahayan at Kita",
     householdDesc: "Idagdag ang mga miyembro ng inyong kasalukuyang sambahayan (asawa, mga anak, magulang, o mga dependent na kasama sa bahay) at ang kanilang trabaho o kita.",
     fullName: "Buong Pangalan",
@@ -133,7 +140,6 @@ const FORM_TRANSLATIONS = {
     assistanceProgramLabel: "Programa ng Tulong",
     phoneLabel: "Numero ng Telepono",
     addressLabel: "Tirahan / Address",
-    reasonLabel: "Dahilan / Hustipikasyon",
     summaryLabel: "Komposisyon at Kita ng Sambahayan",
     memberCol: "Miyembro ng Pamilya",
     relCol: "Relasyon",
@@ -148,9 +154,25 @@ const FORM_TRANSLATIONS = {
     downloadPdf: "I-download ang PDF upang Silipin",
     pdfUploaded: "Na-upload na PDF File",
     missingUploadErr: "Mangyaring i-upload ang lahat ng kailangang digital na dokumento bago magpatuloy. Kulang:",
-    justificationErr: "Mangyaring ipaliwanag nang mas detalyado ang inyong sitwasyon/dahilan (hindi bababa sa 20 karakter). Ito ay kailangan sa pagsusuri.",
     householdErr: "Mangyaring magdagdag ng kahit isang miyembro ng pamilya (kasama ang inyong sarili o mga dependent) upang makita ang buong pamilya.",
-    addMemberErr: "Mangyaring ilagay ang Pangalan, Edad, at Relasyon upang maidagdag ang miyembro."
+    addMemberErr: "Mangyaring ilagay ang Pangalan, Edad, at Relasyon upang maidagdag ang miyembro.",
+    clienteleCategory: "Kategorya ng Kliyente (Pakitingnan)",
+    fhona: "FHONA",
+    wedc: "WEDC",
+    pwd: "PWD",
+    soloParent: "Solo Parent",
+    seniorCitizen: "Senior Citizen",
+    disasterVictim: "Disaster Victim",
+    deporteesStandees: "Deportees/Standees",
+    slp: "SLP",
+    cnsp: "CNSP",
+    yoCicl: "Y.O/CICL",
+    others: "Iba Pa",
+    fr: "FR",
+    impressionFindings: "IV. IMPRESYON/NATUKLASAN",
+    recommendationLabel: "V. REKOMENDASYON",
+    signatureClient: "KLIYENTE",
+    signaturePreparedBy: "Inihanda ni"
   }
 };
 
@@ -237,7 +259,11 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
 
   // Step 1: Assistance Category & Reason
   const [assistanceType, setAssistanceType] = useState<AssistanceType>('Medical');
-  const [justification, setJustification] = useState<string>('');
+
+  // New intake fields
+  const [clienteleCategories, setClienteleCategories] = useState<string[]>([]);
+  const [impressionFindings, setImpressionFindings] = useState<string>('');
+  const [recommendation, setRecommendation] = useState<string>('');
 
   // Step 2: Household Members
   const [householdMembers, setHouseholdMembers] = useState<HouseholdMember[]>([]);
@@ -258,8 +284,10 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
       try {
         const parsed = JSON.parse(savedDraft);
         if (parsed.assistanceType) setAssistanceType(parsed.assistanceType);
-        if (parsed.justification) setJustification(parsed.justification);
         if (parsed.householdMembers) setHouseholdMembers(parsed.householdMembers);
+        if (parsed.clienteleCategories) setClienteleCategories(parsed.clienteleCategories);
+        if (parsed.impressionFindings) setImpressionFindings(parsed.impressionFindings);
+        if (parsed.recommendation) setRecommendation(parsed.recommendation);
       } catch (e) {
         console.error('Failed to parse draft form data:', e);
       }
@@ -270,11 +298,13 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
   useEffect(() => {
     const draft = {
       assistanceType,
-      justification,
-      householdMembers
+      householdMembers,
+      clienteleCategories,
+      impressionFindings,
+      recommendation
     };
     localStorage.setItem(`mswdo_draft_form_${currentUser.id}`, JSON.stringify(draft));
-  }, [assistanceType, justification, householdMembers, currentUser.id]);
+  }, [assistanceType, householdMembers, currentUser.id]);
 
   // Dynamic document requirements list based on selection
   const activeRequirements = getRequiredDocsForType(assistanceType, language);
@@ -351,13 +381,6 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
   const validateStep = (currentStep: number): boolean => {
     setError('');
     
-    if (currentStep === 1) {
-      if (!justification.trim() || justification.trim().length < 20) {
-        setError(t.justificationErr);
-        return false;
-      }
-    }
-
     if (currentStep === 2) {
       if (householdMembers.length === 0) {
         setError(t.householdErr);
@@ -401,13 +424,19 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
       applicant_name: currentUser.name,
       applicant_email: currentUser.email,
       applicant_phone: currentUser.phone,
+      applicant_address: currentUser.address,
+      applicant_birthdate: currentUser.birthdate,
+      applicant_civil_status: currentUser.civilStatus,
       assistance_type: assistanceType,
-      justification,
+      justification: '',
       household_members: householdMembers,
-      documents: Object.values(uploadedDocs),
+      documents: Object.values(uploadedDocs) as UploadedRequirement[],
       status: 'Pending Review',
       submission_date: new Date().toISOString(),
-      control_number: controlNumber
+      control_number: controlNumber,
+      clientele_categories: clienteleCategories,
+      impression_findings: impressionFindings,
+      recommendation
     };
 
     const { error: insertError } = await supabase
@@ -426,13 +455,19 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
       applicantName: newApplication.applicant_name,
       applicantEmail: newApplication.applicant_email,
       applicantPhone: newApplication.applicant_phone,
+      applicantAddress: newApplication.applicant_address,
+      applicantBirthdate: newApplication.applicant_birthdate,
+      applicantCivilStatus: newApplication.applicant_civil_status,
       assistanceType: newApplication.assistance_type as AssistanceType,
       justification: newApplication.justification,
       householdMembers: newApplication.household_members,
       documents: newApplication.documents,
       status: newApplication.status as AICSApplication['status'],
       submissionDate: newApplication.submission_date,
-      controlNumber: newApplication.control_number
+      controlNumber: newApplication.control_number,
+      clienteleCategories: newApplication.clientele_categories,
+      impressionFindings: newApplication.impression_findings,
+      recommendation: newApplication.recommendation
     };
 
     localStorage.removeItem(`mswdo_draft_form_${currentUser.id}`);
@@ -460,9 +495,14 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
           <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white mt-3 uppercase tracking-tight">
             {t.aicsApp}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-            {t.applyingAs}: <strong className="text-slate-800 dark:text-slate-200">{currentUser.name}</strong> ({currentUser.phone})
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 space-y-0.5">
+            <span><strong className="text-slate-800 dark:text-slate-200">{currentUser.name}</strong> &middot; {currentUser.phone}</span>
           </p>
+          <div className="text-[10px] text-slate-400 dark:text-slate-500 mt-1 space-y-0.5">
+            <p>Address: {currentUser.address}</p>
+            <p>Birthdate: {currentUser.birthdate}</p>
+            <p>Civil Status: {currentUser.civilStatus}</p>
+          </div>
         </div>
 
         {/* Step Indicators */}
@@ -540,7 +580,7 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
                         <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
                           isSelected ? 'border-blue-700 bg-blue-700' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800'
                         }`}>
-                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white dark:bg-slate-900" />}
                         </div>
                       </div>
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-2 leading-relaxed">
@@ -552,24 +592,59 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
               </div>
             </div>
 
+            {/* Clientele Category */}
             <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
               <label className="block text-xs md:text-sm font-bold text-slate-900 dark:text-slate-100 mb-2 uppercase tracking-wide">
-                {t.explainEmergency}
+                {t.clienteleCategory}
               </label>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-                {t.explainEmergencyDesc}
-              </p>
-              <textarea
-                value={justification}
-                onChange={(e) => setJustification(e.target.value)}
-                placeholder={t.explainPlaceholder}
-                rows={5}
-                className="w-full p-4 text-xs md:text-sm border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-700/20 focus:border-blue-700 bg-white dark:bg-slate-950/20 text-slate-800 dark:text-slate-100 transition-all leading-relaxed"
-                required
-              ></textarea>
-              <div className="text-right text-[10px] text-slate-400 dark:text-slate-500 mt-1.5 font-mono">
-                {justification.length} {t.charMin}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                {['FHONA','WEDC','PWD','Solo Parent','Senior Citizen','Disaster Victim','Deportees/Standees','SLP','CNSP','Y.O/CICL','Others','FR'].map((cat) => {
+                  const isChecked = clienteleCategories.includes(cat);
+                  return (
+                    <label key={cat} className={`flex items-center gap-2 p-3 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                      isChecked ? 'border-blue-700 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400' : 'border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}>
+                      <input
+                        type="checkbox"
+                        checked={isChecked}
+                        onChange={() => {
+                          setClienteleCategories(prev =>
+                            isChecked ? prev.filter(c => c !== cat) : [...prev, cat]
+                          );
+                        }}
+                        className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-blue-700 focus:ring-blue-700"
+                      />
+                      {t[cat === 'Solo Parent' ? 'soloParent' : cat === 'Senior Citizen' ? 'seniorCitizen' : cat === 'Disaster Victim' ? 'disasterVictim' : cat === 'Deportees/Standees' ? 'deporteesStandees' : cat === 'Y.O/CICL' ? 'yoCicl' : cat.toLowerCase() as keyof typeof t] as string || cat}
+                    </label>
+                  );
+                })}
               </div>
+            </div>
+
+            {/* IMPRESSION/FINDINGS */}
+            <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+              <label className="block text-xs md:text-sm font-bold text-slate-900 dark:text-slate-100 mb-2 uppercase tracking-wide">
+                {t.impressionFindings}
+              </label>
+              <textarea
+                value={impressionFindings}
+                onChange={(e) => setImpressionFindings(e.target.value)}
+                rows={4}
+                className="w-full p-4 text-xs md:text-sm border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-700/20 focus:border-blue-700 bg-white dark:bg-slate-950/20 text-slate-800 dark:text-slate-100 transition-all leading-relaxed"
+              ></textarea>
+            </div>
+
+            {/* RECOMMENDATION */}
+            <div className="pt-6 border-t border-slate-100 dark:border-slate-800">
+              <label className="block text-xs md:text-sm font-bold text-slate-900 dark:text-slate-100 mb-2 uppercase tracking-wide">
+                {t.recommendationLabel}
+              </label>
+              <textarea
+                value={recommendation}
+                onChange={(e) => setRecommendation(e.target.value)}
+                rows={4}
+                className="w-full p-4 text-xs md:text-sm border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-700/20 focus:border-blue-700 bg-white dark:bg-slate-950/20 text-slate-800 dark:text-slate-100 transition-all leading-relaxed"
+              ></textarea>
             </div>
           </div>
         )}
@@ -789,7 +864,7 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
                           </button>
                         </>
                       ) : (
-                        <label className="px-4 py-1.5 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg cursor-pointer flex items-center gap-1.5 shadow-xs transition-all">
+                        <label className="px-4 py-1.5 bg-blue-700 hover:bg-blue-800 text-xs font-bold rounded-lg cursor-pointer flex items-center gap-1.5 shadow-xs transition-all dark:text-white text-slate-900">
                           <UploadCloud size={14} /> {t.chooseFile}
                           <input
                             type="file"
@@ -822,32 +897,33 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
             <div className="p-5 rounded-2xl border border-slate-200 dark:border-slate-850 bg-slate-50 dark:bg-slate-950/40 space-y-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 text-xs">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t.applicantNameLabel}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider block dark:text-slate-400 text-slate-500">{t.applicantNameLabel}</span>
                   <span className="font-bold text-slate-900 dark:text-white block mt-1">{currentUser.name}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t.assistanceProgramLabel}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider block dark:text-slate-400 text-slate-500">{t.assistanceProgramLabel}</span>
                   <span className="font-black text-blue-700 dark:text-blue-450 block mt-1">{assistanceType} Assistance</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t.phoneLabel}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider block dark:text-slate-400 text-slate-500">{t.phoneLabel}</span>
                   <span className="font-bold text-slate-900 dark:text-white block mt-1">{currentUser.phone}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t.addressLabel}</span>
+                  <span className="text-[10px] font-bold uppercase tracking-wider block dark:text-slate-400 text-slate-500">{t.addressLabel}</span>
                   <span className="font-bold text-slate-900 dark:text-white block mt-1">{currentUser.address}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider block dark:text-slate-400 text-slate-500">Birthdate:</span>
+                  <span className="font-bold text-slate-900 dark:text-white block mt-1">{currentUser.birthdate}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider block dark:text-slate-400 text-slate-500">Civil Status:</span>
+                  <span className="font-bold text-slate-900 dark:text-white block mt-1">{currentUser.civilStatus}</span>
                 </div>
               </div>
 
               <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">{t.reasonLabel}</span>
-                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-150 dark:border-slate-800/80 italic">
-                  &ldquo;{justification}&rdquo;
-                </p>
-              </div>
-
-              <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">{t.summaryLabel}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider block mb-2 dark:text-slate-400 text-slate-500">{t.summaryLabel}</span>
                 <div className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
                   <table className="w-full text-left text-xs">
                     <thead>
@@ -871,7 +947,7 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
               </div>
 
               <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-2">{t.docsSubbedLabel}</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider block mb-2 dark:text-slate-400 text-slate-500">{t.docsSubbedLabel}</span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {(Object.values(uploadedDocs) as UploadedRequirement[]).map((doc) => (
                     <div key={doc.id} className="p-2.5 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
@@ -887,6 +963,54 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
                       </button>
                     </div>
                   ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Clientele Categories Review */}
+            {clienteleCategories.length > 0 && (
+              <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider block mb-2 dark:text-slate-400 text-slate-500">{t.clienteleCategory}</span>
+                <div className="flex flex-wrap gap-2">
+                  {clienteleCategories.map((cat) => (
+                    <span key={cat} className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 rounded-lg text-[11px] font-bold border border-blue-200 dark:border-blue-900/30">
+                      {cat}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Impression/Findings Review */}
+            {impressionFindings && (
+              <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 dark:text-slate-400 text-slate-500">{t.impressionFindings}</span>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-150 dark:border-slate-800/80 italic">
+                  &ldquo;{impressionFindings}&rdquo;
+                </p>
+              </div>
+            )}
+
+            {/* Recommendation Review */}
+            {recommendation && (
+              <div className="border-t border-slate-200 dark:border-slate-800 pt-4">
+                <span className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 dark:text-slate-400 text-slate-500">{t.recommendationLabel}</span>
+                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-150 dark:border-slate-800/80 italic">
+                  &ldquo;{recommendation}&rdquo;
+                </p>
+              </div>
+            )}
+
+            {/* Signature Lines */}
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+                <div className="text-center">
+                  <div className="border-b-2 border-slate-900 dark:border-white w-48 mx-auto mb-1"></div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t.signatureClient}</p>
+                </div>
+                <div className="text-center">
+                  <div className="border-b-2 border-slate-900 dark:border-white w-48 mx-auto mb-1"></div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">{t.signaturePreparedBy}</p>
                 </div>
               </div>
             </div>
@@ -926,7 +1050,7 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
           <button
             type="button"
             onClick={nextStep}
-            className="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 text-white font-extrabold text-xs md:text-sm rounded-xl flex items-center gap-2 shadow-md shadow-blue-700/10 transition-all cursor-pointer"
+            className="px-6 py-2.5 bg-blue-700 hover:bg-blue-800 font-extrabold text-xs md:text-sm rounded-xl flex items-center gap-2 shadow-md shadow-blue-700/10 transition-all cursor-pointer dark:text-white text-slate-900"
           >
             {t.next} <ArrowRight size={16} />
           </button>
@@ -934,7 +1058,7 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
           <button
             type="button"
             onClick={handleSubmitApplication}
-            className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs md:text-sm rounded-xl flex items-center gap-2 shadow-md transition-all cursor-pointer uppercase tracking-wider"
+            className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-700 font-extrabold text-xs md:text-sm rounded-xl flex items-center gap-2 shadow-md transition-all cursor-pointer uppercase tracking-wider dark:text-white text-slate-900"
           >
             <CheckCircle2 size={16} /> {t.submit}
           </button>
@@ -966,13 +1090,13 @@ export default function AICSApplicationForm({ currentUser, onSubmitSuccess, onCa
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <div className="text-center text-white py-12 flex flex-col items-center gap-3">
-                  <FileType size={48} className="text-slate-400" />
+                <div className="text-center py-12 flex flex-col items-center gap-3 dark:text-white text-slate-900">
+                  <FileType size={48} className="dark:text-slate-400 text-slate-500" />
                   <p className="text-sm font-bold">{t.pdfUploaded}</p>
                   <a 
                     href={previewDoc.fileData} 
                     download={previewDoc.fileName}
-                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl shadow-lg transition-colors"
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-xs font-extrabold rounded-xl shadow-lg transition-colors dark:text-white text-slate-900"
                   >
                     {t.downloadPdf}
                   </a>

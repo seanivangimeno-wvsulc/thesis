@@ -3,7 +3,7 @@ import { Landmark, Calendar, Phone, Mail, Clock, HelpCircle, ShieldCheck } from 
 
 export default function PortalHeader() {
   return (
-    <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-2xl overflow-hidden relative shadow-lg border border-slate-800">
+    <div className="bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 rounded-2xl overflow-hidden relative shadow-lg border dark:border-slate-800 border-slate-200 text-white">
       {/* Absolute Decorative Circles */}
       <div className="absolute top-0 right-0 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl -translate-y-12 translate-x-12 pointer-events-none" />
       <div className="absolute bottom-0 left-12 w-60 h-60 bg-blue-500/5 rounded-full blur-3xl pointer-events-none" />
@@ -17,12 +17,12 @@ export default function PortalHeader() {
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight leading-tight">
             Municipal Social Welfare and Development Office
           </h1>
-          <p className="text-xs md:text-sm text-slate-300 leading-relaxed max-w-xl">
+          <p className="text-xs md:text-sm leading-relaxed max-w-xl dark:text-slate-300 text-slate-600">
             Providing accessible, secure, and immediate social assistance to support individuals and families in crisis. Learn about municipal services, check eligibility, and file for AICS support with secure digital document verification.
           </p>
 
           {/* Core Information Details */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs text-slate-400">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 text-xs dark:text-slate-400 text-slate-500">
             <div className="flex items-center gap-1.5">
               <Clock size={13} className="text-blue-400" />
               <span>Mon-Fri (8AM-5PM)</span>
@@ -48,20 +48,20 @@ export default function PortalHeader() {
             <Calendar size={13} /> Immediate Processing
           </h3>
           <div className="space-y-2 text-xs">
-            <div className="flex justify-between border-b border-slate-800 pb-2">
-              <span className="text-slate-400">AICS Online Review</span>
+            <div className="flex justify-between border-b pb-2 dark:border-slate-800 border-slate-200">
+              <span className="dark:text-slate-400 text-slate-500">AICS Online Review</span>
               <span className="font-bold text-emerald-400">2-3 Office Days</span>
             </div>
-            <div className="flex justify-between border-b border-slate-800 pb-2">
-              <span className="text-slate-400">PWD / Senior ID</span>
-              <span className="font-bold text-slate-300">On-Site Walk-In</span>
+            <div className="flex justify-between border-b pb-2 dark:border-slate-800 border-slate-200">
+              <span className="dark:text-slate-400 text-slate-500">PWD / Senior ID</span>
+              <span className="font-bold dark:text-slate-300 text-slate-600">On-Site Walk-In</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-slate-400">Solo Parent ID</span>
-              <span className="font-bold text-slate-300">Case Interview</span>
+              <span className="dark:text-slate-400 text-slate-500">Solo Parent ID</span>
+              <span className="font-bold dark:text-slate-300 text-slate-600">Case Interview</span>
             </div>
           </div>
-          <div className="text-[10px] text-slate-400 leading-relaxed pt-1">
+          <div className="text-[10px] leading-relaxed pt-1 dark:text-slate-400 text-slate-500">
             * Ensure all required files are readable and up-to-date to prevent delay in processing.
           </div>
         </div>

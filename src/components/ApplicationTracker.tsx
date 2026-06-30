@@ -9,6 +9,8 @@ interface ApplicationTrackerProps {
   applications: AICSApplication[];
   onStatusUpdate: (appId: string, newStatus: AICSApplication['status'], notes?: string) => void;
   language?: 'en' | 'fil';
+  selectedAppId?: string | null;
+  onSelectApp?: (appId: string | null) => void;
 }
 
 const TRACKER_TRANSLATIONS = {
@@ -29,7 +31,6 @@ const TRACKER_TRANSLATIONS = {
     nameLabel: "Name:",
     emailLabel: "Email:",
     contactNumberLabel: "Contact Number:",
-    narrativeTitle: "Case Situation / Narrative",
     householdTitle: "Household Structure",
     nameTh: "Name",
     relTh: "Relationship",
@@ -70,7 +71,6 @@ const TRACKER_TRANSLATIONS = {
     nameLabel: "Pangalan:",
     emailLabel: "Email:",
     contactNumberLabel: "Numero ng Telepono:",
-    narrativeTitle: "Sitwasyon / Detalye ng Kaso",
     householdTitle: "Komposisyon ng Sambahayan",
     nameTh: "Pangalan",
     relTh: "Relasyon",
@@ -96,11 +96,15 @@ const TRACKER_TRANSLATIONS = {
   }
 };
 
-export default function ApplicationTracker({ applications, onStatusUpdate, language = 'en' }: ApplicationTrackerProps) {
+export default function ApplicationTracker({ applications, onStatusUpdate, language = 'en', selectedAppId: propSelectedAppId, onSelectApp }: ApplicationTrackerProps) {
   const t = TRACKER_TRANSLATIONS[language];
-  const [selectedAppId, setSelectedAppId] = useState<string | null>(
+  const [localSelectedAppId, setLocalSelectedAppId] = useState<string | null>(
     applications.length > 0 ? applications[0].id : null
   );
+
+  const selectedAppId = propSelectedAppId !== undefined ? propSelectedAppId : localSelectedAppId;
+  const setSelectedAppId = onSelectApp || setLocalSelectedAppId;
+
   const [previewDoc, setPreviewDoc] = useState<UploadedRequirement | null>(null);
   
   // Simulation panel helper state
@@ -142,7 +146,7 @@ export default function ApplicationTracker({ applications, onStatusUpdate, langu
   const getStatusStyle = (status: AICSApplication['status']) => {
     switch (status) {
       case 'Pending Review':
-        return { bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25', dot: 'bg-amber-500' };
+        return { bg: 'bg-transparent text-blue-600 dark:text-blue-400 border-blue-500/25', dot: 'bg-blue-500' };
       case 'Document Verification':
         return { bg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/25', dot: 'bg-blue-500' };
       case 'Interview Scheduled':
@@ -179,7 +183,7 @@ export default function ApplicationTracker({ applications, onStatusUpdate, langu
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 max-w-6xl mx-auto items-start text-slate-800 dark:text-slate-100">
       {/* Applications Sidebar List */}
       <div className="lg:col-span-4 space-y-4">
-        <h3 className="font-extrabold text-slate-900 dark:text-white text-xs uppercase tracking-wider mb-1">
+        <h3 className="font-extrabold text-blue-600 dark:text-blue-400 text-xs uppercase tracking-wider mb-1">
           {t.submittedRequests} ({applications.length})
         </h3>
         <div className="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
@@ -197,7 +201,7 @@ export default function ApplicationTracker({ applications, onStatusUpdate, langu
                 }`}
               >
                 <div className="flex justify-between items-start gap-2">
-                  <span className="font-mono text-[10px] font-bold text-slate-400">
+                  <span className="font-mono text-[10px] font-bold text-blue-600 dark:text-blue-400">
                     {app.controlNumber}
                   </span>
                   <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border shrink-0 ${statusStyle.bg}`}>
@@ -205,20 +209,16 @@ export default function ApplicationTracker({ applications, onStatusUpdate, langu
                   </span>
                 </div>
                 
-                <h4 className="font-bold text-xs md:text-sm text-slate-900 dark:text-white mt-2 uppercase tracking-tight">
+                <h4 className="font-bold text-xs md:text-sm text-blue-600 dark:text-blue-400 mt-2 uppercase tracking-tight">
                   {app.assistanceType} Assistance
                 </h4>
-                
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5 line-clamp-1 italic">
-                  &ldquo;{app.justification}&rdquo;
-                </p>
 
-                <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between text-[10px] text-blue-600 dark:text-blue-400 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <span className="flex items-center gap-1 font-medium">
                     <Calendar size={12} />
                     {new Date(app.submissionDate).toLocaleDateString()}
                   </span>
-                  <span className="font-extrabold text-blue-700 dark:text-blue-400 flex items-center gap-0.5">
+                  <span className="font-extrabold text-blue-600 dark:text-blue-400 flex items-center gap-0.5">
                     {t.viewDetails} <ArrowUpRight size={10} />
                   </span>
                 </div>
@@ -234,7 +234,7 @@ export default function ApplicationTracker({ applications, onStatusUpdate, langu
           {/* Accent Header */}
           <div className="p-6 border-b border-slate-150 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-              <span className="font-mono text-[10px] font-extrabold text-slate-400 block tracking-wider">
+              <span className="font-mono text-[10px] font-extrabold block tracking-wider dark:text-slate-400 text-slate-500">
                 {t.controlNumber}: {activeApp.controlNumber}
               </span>
               <h2 className="text-lg md:text-xl font-black text-slate-900 dark:text-white mt-1 uppercase tracking-tight">
@@ -255,6 +255,25 @@ export default function ApplicationTracker({ applications, onStatusUpdate, langu
           </div>
 
           <div className="p-6 md:p-8 space-y-8">
+            {/* Intake Sheet Header */}
+            <div className="text-center border-b-2 border-slate-300 dark:border-slate-700 pb-6 mb-2">
+              <div className="flex items-center justify-center gap-4 mb-3">
+                <img src="/images/mswdo.jpeg" alt="MSWDO Logo" className="w-14 h-14 md:w-16 md:h-16 object-contain rounded-full" />
+                <div>
+                  <p className="text-[10px] md:text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Republic of the Philippines</p>
+                  <p className="text-xs md:text-sm font-bold text-slate-800 dark:text-slate-200">Province of Iloilo</p>
+                  <p className="text-sm md:text-lg font-black text-slate-900 dark:text-white">Municipality of Tubungan</p>
+                  <p className="text-[10px] md:text-xs font-bold text-slate-700 dark:text-slate-300">Municipal Social Welfare and Development Office</p>
+                </div>
+                <img src="/images/logo.jpeg" alt="Logo" className="w-14 h-14 md:w-16 md:h-16 object-contain rounded-full" />
+              </div>
+              <div className="border-t-2 border-b-2 border-slate-900 dark:border-white py-1.5 mb-2 max-w-xs mx-auto">
+                <h2 className="text-sm md:text-lg font-black uppercase tracking-widest text-slate-900 dark:text-white">INTAKE SHEET</h2>
+              </div>
+              <h3 className="text-xs md:text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-200">AICS Assistance Application</h3>
+              <p className="text-[10px] font-mono font-bold text-blue-700 dark:text-blue-400 mt-1">{activeApp.controlNumber}</p>
+            </div>
+
             {/* Status Timeline Visualizer */}
             {activeApp.status !== 'Rejected' ? (
               <div className="bg-slate-50 dark:bg-slate-950/30 p-6 rounded-2xl border border-slate-150 dark:border-slate-800">
@@ -311,37 +330,78 @@ export default function ApplicationTracker({ applications, onStatusUpdate, langu
               </div>
             )}
 
-            {/* Case Details Details Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-              <div>
-                <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-3">
-                  {t.applicantProfile}
-                </h3>
-                <div className="bg-slate-50/50 dark:bg-slate-950/20 p-4 rounded-xl border border-slate-150 dark:border-slate-800 space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400">{t.nameLabel}</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{activeApp.applicantName}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400">{t.emailLabel}</span>
-                    <span className="font-mono text-slate-900 dark:text-white truncate max-w-[180px]">{activeApp.applicantEmail}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400">{t.contactNumberLabel}</span>
-                    <span className="font-bold text-slate-900 dark:text-white">{activeApp.applicantPhone}</span>
-                  </div>
+            {/* Applicant Profile */}
+            <div>
+              <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-3">
+                {t.applicantProfile}
+              </h3>
+              <div className="bg-slate-50/50 dark:bg-slate-950/20 p-4 rounded-xl border border-slate-150 dark:border-slate-800 space-y-2.5 text-xs text-slate-700 dark:text-slate-300">
+                <div className="flex justify-between items-center">
+                  <span className="dark:text-slate-400 text-slate-500">Status:</span>
+                  <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold border ${getStatusStyle(activeApp.status).bg}`}>
+                    {getLocalizedStatus(activeApp.status)}
+                  </span>
                 </div>
-              </div>
-
-              <div>
-                <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-555 uppercase tracking-wider mb-3">
-                  {t.narrativeTitle}
-                </h3>
-                <div className="bg-slate-50/50 dark:bg-slate-950/20 p-4 rounded-xl border border-slate-150 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 min-h-[90px] italic leading-relaxed">
-                  &ldquo;{activeApp.justification}&rdquo;
+                <div className="flex justify-between items-center">
+                  <span className="dark:text-slate-400 text-slate-500">{t.nameLabel}</span>
+                  <span className="font-bold text-slate-900 dark:text-white">{activeApp.applicantName}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="dark:text-slate-400 text-slate-500">{t.emailLabel}</span>
+                  <span className="font-mono text-slate-900 dark:text-white truncate max-w-[180px]">{activeApp.applicantEmail}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="dark:text-slate-400 text-slate-500">{t.contactNumberLabel}</span>
+                  <span className="font-bold text-slate-900 dark:text-white">{activeApp.applicantPhone}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="dark:text-slate-400 text-slate-500">Address:</span>
+                  <span className="font-bold text-slate-900 dark:text-white text-right max-w-[200px]">{activeApp.applicantAddress}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="dark:text-slate-400 text-slate-500">Birthdate:</span>
+                  <span className="font-bold text-slate-900 dark:text-white">{activeApp.applicantBirthdate}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="dark:text-slate-400 text-slate-500">Civil Status:</span>
+                  <span className="font-bold text-slate-900 dark:text-white">{activeApp.applicantCivilStatus}</span>
                 </div>
               </div>
             </div>
+
+            {/* Clientele Categories */}
+            {activeApp.clienteleCategories && activeApp.clienteleCategories.length > 0 && (
+              <div>
+                <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-3">Clientele Category</h3>
+                <div className="flex flex-wrap gap-2">
+                  {activeApp.clienteleCategories.map((cat) => (
+                    <span key={cat} className="px-2.5 py-1 bg-blue-50 dark:bg-blue-950/20 text-blue-700 dark:text-blue-400 rounded-lg text-[11px] font-bold border border-blue-200 dark:border-blue-900/30">
+                      {cat}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Impression/Findings */}
+            {activeApp.impressionFindings && (
+              <div>
+                <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-3">IV. IMPRESSION/FINDINGS</h3>
+                <div className="bg-slate-50/50 dark:bg-slate-950/20 p-4 rounded-xl border border-slate-150 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 italic leading-relaxed">
+                  &ldquo;{activeApp.impressionFindings}&rdquo;
+                </div>
+              </div>
+            )}
+
+            {/* Recommendation */}
+            {activeApp.recommendation && (
+              <div>
+                <h3 className="text-[10px] font-black text-slate-400 dark:text-slate-550 uppercase tracking-wider mb-3">V. RECOMMENDATION</h3>
+                <div className="bg-slate-50/50 dark:bg-slate-950/20 p-4 rounded-xl border border-slate-150 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 italic leading-relaxed">
+                  &ldquo;{activeApp.recommendation}&rdquo;
+                </div>
+              </div>
+            )}
 
             {/* Household composition */}
             <div>
@@ -402,6 +462,20 @@ export default function ApplicationTracker({ applications, onStatusUpdate, langu
                 ))}
               </div>
             </div>
+
+            {/* Signature Lines */}
+            <div className="pt-6 border-t border-slate-200 dark:border-slate-800">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+                <div className="text-center">
+                  <div className="border-b-2 border-slate-900 dark:border-white w-48 mx-auto mb-1"></div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">CLIENT</p>
+                </div>
+                <div className="text-center">
+                  <div className="border-b-2 border-slate-900 dark:border-white w-48 mx-auto mb-1"></div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">Prepared by</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       ) : (
@@ -435,13 +509,13 @@ export default function ApplicationTracker({ applications, onStatusUpdate, langu
                   referrerPolicy="no-referrer"
                 />
               ) : (
-                <div className="text-center text-white py-12 flex flex-col items-center gap-3">
-                  <FileText size={48} className="text-slate-400" />
+                <div className="text-center py-12 flex flex-col items-center gap-3 dark:text-white text-slate-900">
+                  <FileText size={48} className="dark:text-slate-400 text-slate-500" />
                   <p className="text-sm font-bold">{t.pdfFileUploaded}</p>
                   <a 
                     href={previewDoc.fileData} 
                     download={previewDoc.fileName}
-                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold rounded-xl shadow-lg transition-colors"
+                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-xs font-extrabold rounded-xl shadow-lg transition-colors dark:text-white text-slate-900"
                   >
                     {t.downloadPdf}
                   </a>

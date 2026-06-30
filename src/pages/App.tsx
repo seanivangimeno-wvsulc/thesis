@@ -447,13 +447,23 @@ export default function App() {
   
   // Applications States
   const [applications, setApplications] = useState<AICSApplication[]>([]);
+  const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
   
   // System Toast State
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'info' | 'error' } | null>(null);
 
   // Load user session and applications on mount, along with Elfsight script
   useEffect(() => {
-    
+    const savedUser = localStorage.getItem('mswdo_active_user');
+    if (savedUser) {
+      try {
+        const user = JSON.parse(savedUser);
+        setCurrentUser(user);
+        fetchApplications(user.id);
+      } catch (e) {
+        console.error('Failed to parse saved user', e);
+      }
+    }
 
     // Graceful error handling for third-party scripts (e.g. Elfsight CORS/Sandbox errors)
     const handleGlobalError = (event: ErrorEvent) => {
@@ -503,13 +513,19 @@ export default function App() {
         applicantName: app.applicant_name,
         applicantEmail: app.applicant_email,
         applicantPhone: app.applicant_phone,
+        applicantAddress: app.applicant_address || '',
+        applicantBirthdate: app.applicant_birthdate || '',
+        applicantCivilStatus: app.applicant_civil_status || '',
         assistanceType: app.assistance_type,
         justification: app.justification,
         householdMembers: app.household_members,
         documents: app.documents,
         status: app.status,
         submissionDate: app.submission_date,
-        controlNumber: app.control_number
+        controlNumber: app.control_number,
+        clienteleCategories: app.clientele_categories || [],
+        impressionFindings: app.impression_findings || '',
+        recommendation: app.recommendation || ''
       }));
       setApplications(mappedApps);
     }
@@ -521,6 +537,7 @@ export default function App() {
   const handleAuthSuccess = (user: User) => {
     setCurrentUser(user);
     localStorage.setItem('mswdo_active_user', JSON.stringify(user));
+    fetchApplications(user.id);
     showToast(`Successfully logged in as ${user.name}!`, 'success');
     setActiveTab('history');
   };
@@ -593,7 +610,7 @@ export default function App() {
     }`}>
       {/* Dynamic Header Toast */}
       {toast && (
-        <div className="fixed bottom-5 right-5 z-[100] max-w-sm w-full bg-slate-900 text-white rounded-xl shadow-2xl p-4 border border-slate-800 flex items-start gap-3 animate-slide-in">
+        <div className="fixed bottom-5 right-5 z-[100] max-w-sm w-full rounded-xl shadow-2xl p-4 border flex items-start gap-3 animate-slide-in dark:text-white text-slate-900 dark:bg-slate-900 bg-white dark:border-slate-800 border-slate-200">
           <div className="shrink-0">
             {toast.type === 'success' && <CheckCircle2 className="text-emerald-500" size={20} />}
             {toast.type === 'info' && <Info className="text-amber-500" size={20} />}
@@ -604,20 +621,29 @@ export default function App() {
       )}
 
       {/* Global Municipal Branding Navbar */}
-      <nav className="sticky top-0 bg-blue-900 text-white shadow-md z-40 transition-all">
+      <nav className="sticky top-0 bg-blue-900 shadow-md z-40 transition-all text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center">
             {/* Logo / Brand */}
             <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center p-1 shadow-sm shrink-0">
-                <img 
-                  src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Seal_of_the_Department_of_Social_Welfare_and_Development.svg" 
-                  alt="Logo" 
-                  className="w-full h-full"
-                />
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm shrink-0 dark:bg-slate-900 overflow-hidden border-2 border-white/20">
+                  <img 
+                    src="/images/logo.jpeg" 
+                    alt="Tubungan Logo" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="w-12 h-12 bg-white rounded-full items-center justify-center shadow-sm shrink-0 dark:bg-slate-900 overflow-hidden border-2 border-white/20 hidden sm:flex">
+                  <img 
+                    src="/images/mswdo.jpeg" 
+                    alt="MSWDO Logo" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
               </div>
               <div>
-                <span className="font-bold text-white text-lg tracking-tight block uppercase leading-tight">
+                <span className="font-bold text-lg tracking-tight block uppercase leading-tight dark:text-white text-slate-900">
                   MSWDO Portal
                 </span>
                 <span className="text-[10px] text-blue-200 block uppercase tracking-widest font-semibold">
@@ -670,8 +696,8 @@ export default function App() {
                   {translations[language].welfareServices} <ChevronDown size={12} />
                 </button>
                 {isServicesDropdownOpen && (
-                  <div className="absolute left-0 pt-2 w-72 z-50 text-slate-800 animate-fade-in">
-                    <div className="bg-white rounded-xl shadow-xl border border-slate-200 py-2.5">
+                  <div className="absolute left-0 pt-2 w-72 z-50 text-slate-800 animate-fade-in dark:text-slate-100">
+                    <div className="bg-white rounded-xl shadow-xl border border-slate-200 py-2.5 dark:bg-slate-900 dark:border-slate-800">
                       {servicesData.map((service) => (
                         <button
                           key={service.id}
@@ -693,7 +719,7 @@ export default function App() {
                             <LucideIcon name={service.iconName} size={14} />
                           </div>
                           <div>
-                            <p className="font-bold text-xs text-slate-950">{service.name}</p>
+                            <p className="font-bold text-xs text-blue-600 dark:text-blue-400">{service.name}</p>
                             <p className="text-[10px] text-slate-500 line-clamp-1">{service.fullName}</p>
                           </div>
                         </button>
@@ -749,7 +775,7 @@ export default function App() {
                     <span className="relative inline-block">
                       {translations[language].myApplications}
                       {userApplications.length > 0 && (
-                        <span className="absolute -top-2.5 -right-3 px-1.5 py-0.5 rounded-full bg-blue-500 text-white text-[9px] font-extrabold shadow-sm">
+                        <span className="absolute -top-2.5 -right-3 px-1.5 py-0.5 rounded-full bg-blue-500 text-[9px] font-extrabold shadow-sm dark:text-white text-slate-900">
                           {userApplications.length}
                         </span>
                       )}
@@ -784,7 +810,7 @@ export default function App() {
               {currentUser ? (
                 <div className="hidden lg:flex items-center gap-3 bg-blue-800/50 py-2 px-4 rounded-lg border border-blue-700/50">
                   <div className="flex flex-col items-end">
-                    <span className="text-xs font-bold text-white">{currentUser.name}</span>
+                    <span className="text-xs font-bold dark:text-white text-slate-900">{currentUser.name}</span>
                     <span className="text-[9px] text-blue-200 uppercase tracking-widest font-bold">ID: {currentUser.id.substring(4).toUpperCase()}</span>
                   </div>
                   <div className="w-8 h-8 rounded-full bg-blue-300 flex items-center justify-center font-bold text-blue-900 text-sm">
@@ -814,7 +840,7 @@ export default function App() {
                       setAuthModalInitialTab('register');
                       setIsAuthModalOpen(true);
                     }}
-                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1"
+                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-xs font-bold shadow-md hover:shadow-lg transition-all cursor-pointer flex items-center gap-1 dark:text-white text-slate-900"
                   >
                     <LogIn size={13} /> {translations[language].createAccount}
                   </button>
@@ -852,7 +878,7 @@ export default function App() {
             {/* Header / Brand */}
             <div className="p-5 border-b flex items-center justify-between border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center p-0.5 shadow-xs shrink-0">
+                <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center p-0.5 shadow-xs shrink-0 dark:bg-slate-900">
                   <img 
                     src="https://upload.wikimedia.org/wikipedia/commons/4/4e/Seal_of_the_Department_of_Social_Welfare_and_Development.svg" 
                     alt="Logo" 
@@ -863,7 +889,7 @@ export default function App() {
                   <span className="font-extrabold text-sm tracking-tight block uppercase leading-tight text-blue-700 dark:text-blue-450">
                     MSWDO PORTAL
                   </span>
-                  <span className="text-[8px] text-slate-400 block uppercase tracking-wider font-semibold">
+                  <span className="text-[8px] block uppercase tracking-wider font-semibold dark:text-slate-400 text-slate-500">
                     Tubungan Municipal
                   </span>
                 </div>
@@ -872,7 +898,7 @@ export default function App() {
               {/* Close Button */}
               <button 
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 transition-colors cursor-pointer dark:text-slate-400 text-slate-500"
               >
                 <X size={18} />
               </button>
@@ -955,8 +981,8 @@ export default function App() {
                             <LucideIcon name={service.iconName} size={12} />
                           </div>
                           <div>
-                            <p className="font-bold text-[11px] leading-tight text-slate-850 dark:text-slate-200">{service.name}</p>
-                            <p className="text-[9px] text-slate-400 line-clamp-1">{service.fullName}</p>
+                            <p className="font-bold text-[11px] leading-tight text-blue-600 dark:text-blue-400">{service.name}</p>
+                            <p className="text-[9px] line-clamp-1 dark:text-slate-400 text-slate-500">{service.fullName}</p>
                           </div>
                         </button>
                       ))}
@@ -1001,7 +1027,7 @@ export default function App() {
                             <p className="font-bold text-[11px] leading-tight text-slate-850 dark:text-slate-200">
                               {translations[language].applyAics}
                             </p>
-                            <p className="text-[9px] text-slate-400">Fill & submit online form</p>
+                            <p className="text-[9px] dark:text-slate-400 text-slate-500">Fill & submit online form</p>
                           </div>
                         </button>
 
@@ -1022,10 +1048,10 @@ export default function App() {
                               <p className="font-bold text-[11px] leading-tight text-slate-850 dark:text-slate-200">
                                 {translations[language].myApplications}
                               </p>
-                              <p className="text-[9px] text-slate-400">Track and monitor requests</p>
+                              <p className="text-[9px] dark:text-slate-400 text-slate-500">Track and monitor requests</p>
                             </div>
                             {userApplications.length > 0 && (
-                              <span className="bg-blue-500 text-white text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm ml-2">
+                              <span className="bg-blue-500 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full shadow-sm ml-2 dark:text-white text-slate-900">
                                 {userApplications.length}
                               </span>
                             )}
@@ -1078,7 +1104,7 @@ export default function App() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-slate-850 dark:text-slate-200">{currentUser.name}</p>
-                      <p className="text-[9px] text-slate-400 font-medium">ID: {currentUser.id.substring(4).toUpperCase()}</p>
+                      <p className="text-[9px] font-medium dark:text-slate-400 text-slate-500">ID: {currentUser.id.substring(4).toUpperCase()}</p>
                     </div>
                   </div>
                   <button
@@ -1110,7 +1136,7 @@ export default function App() {
                       setIsAuthModalOpen(true);
                       setIsMobileMenuOpen(false);
                     }}
-                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer text-center"
+                    className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl text-xs font-extrabold shadow-sm transition-all cursor-pointer text-center dark:text-white text-slate-900"
                   >
                     {translations[language].createAccount}
                   </button>
@@ -1145,11 +1171,11 @@ export default function App() {
                   <Landmark size={14} className="text-blue-400" /> Municipal Social Welfare & Development Office
                 </div>
                 
-                <h1 className="text-3xl md:text-5xl font-black text-white tracking-tight leading-tight uppercase">
+                <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-tight uppercase dark:text-white text-slate-900">
                   Tubungan MSWDO Portal
                 </h1>
                 
-                <p className="text-sm md:text-base text-slate-300 max-w-xl mx-auto leading-relaxed font-medium">
+                <p className="text-sm md:text-base max-w-xl mx-auto leading-relaxed font-medium dark:text-slate-300 text-slate-600">
                   Your direct digital link to social welfare programs and emergency assistance. Securely register, apply for AICS, and track document validation in real time.
                 </p>
 
@@ -1163,7 +1189,7 @@ export default function App() {
                         setActiveTab('apply');
                       }
                     }}
-                    className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 uppercase tracking-wider"
+                    className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl text-sm shadow-lg transition-all cursor-pointer flex items-center justify-center gap-2 uppercase tracking-wider dark:text-white text-slate-900"
                   >
                     {currentUser ? 'File AICS Application' : 'Register Secure Profile'} <ArrowRight size={16} />
                   </button>
@@ -1173,7 +1199,7 @@ export default function App() {
                       setActiveTab('services-info');
                       setSelectedServiceId('aics');
                     }}
-                    className="w-full sm:w-auto px-8 py-3.5 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl text-sm transition-all cursor-pointer flex items-center justify-center gap-2 border border-white/25 hover:border-white/40"
+                    className="w-full sm:w-auto px-8 py-3.5 bg-white/10 hover:bg-white/20 font-bold rounded-xl text-sm transition-all cursor-pointer flex items-center justify-center gap-2 border border-white/25 hover:border-white/40 dark:text-white text-slate-900"
                   >
                     Explore Services Guide
                   </button>
@@ -1183,8 +1209,8 @@ export default function App() {
 
             {/* Registration Gate (Prompts guest users to create account first) */}
             {!currentUser && (
-              <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl grid grid-cols-1 lg:grid-cols-12 gap-0">
-                <div className="lg:col-span-6 bg-slate-900 p-8 md:p-12 text-white relative flex flex-col justify-between overflow-hidden min-h-[350px]">
+              <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl grid grid-cols-1 lg:grid-cols-12 gap-0 dark:bg-slate-900 dark:border-slate-800">
+                <div className="lg:col-span-6 p-8 md:p-12 relative flex flex-col justify-between overflow-hidden min-h-[350px] dark:text-white text-slate-900 dark:bg-slate-900 bg-white">
                   <div className="absolute inset-0 bg-cover bg-center opacity-20" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&q=80&w=1000')" }} />
                   <div className="relative z-10 space-y-6">
                     <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
@@ -1193,7 +1219,7 @@ export default function App() {
                     <h2 className="text-2xl md:text-3xl font-black tracking-tight leading-tight">
                       Create Your Secured Account to Open the Portal
                     </h2>
-                    <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
+                    <p className="text-xs md:text-sm leading-relaxed dark:text-slate-300 text-slate-600">
                       To submit AICS applications and access digital services, all residents of Tubungan must verify their identity. This keeps your personal case files secure and compliant with the Data Privacy Act of 2012.
                     </p>
                     
@@ -1212,15 +1238,15 @@ export default function App() {
                       </div>
                     </div>
                   </div>
-                  <div className="relative z-10 text-[10px] text-slate-400 pt-6 border-t border-slate-800">
+                  <div className="relative z-10 text-[10px] pt-6 border-t dark:text-slate-400 text-slate-500 dark:border-slate-800 border-slate-200">
                     * All data is processed using AES-256 SSL encryption.
                   </div>
                 </div>
 
-                <div className="lg:col-span-6 p-8 md:p-12 flex flex-col justify-center bg-slate-50">
+                <div className="lg:col-span-6 p-8 md:p-12 flex flex-col justify-center bg-slate-50 dark:bg-slate-950">
                   <div className="max-w-md w-full mx-auto space-y-6">
                     <div>
-                      <h3 className="text-xl font-bold text-slate-900">Get Started Today</h3>
+                      <h3 className="text-xl font-bold text-slate-900 dark:text-white">Get Started Today</h3>
                       <p className="text-xs text-slate-500 mt-1">Register a new profile or sign in to open the digital dashboard.</p>
                     </div>
                     
@@ -1230,7 +1256,7 @@ export default function App() {
                           setAuthModalInitialTab('register');
                           setIsAuthModalOpen(true);
                         }}
-                        className="flex-1 py-3 bg-blue-700 hover:bg-blue-800 text-white rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
+                        className="flex-1 py-3 bg-blue-700 hover:bg-blue-800 rounded-xl text-xs font-bold shadow-md hover:shadow-lg transition-all text-center flex items-center justify-center gap-2 cursor-pointer dark:text-white text-slate-900"
                       >
                         <LogIn size={14} /> Create Account / Register
                       </button>
@@ -1239,7 +1265,7 @@ export default function App() {
                           setAuthModalInitialTab('login');
                           setIsAuthModalOpen(true);
                         }}
-                        className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-2 cursor-pointer"
+                        className="flex-1 py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold transition-all text-center flex items-center justify-center gap-2 cursor-pointer dark:bg-slate-900 dark:border-slate-800"
                       >
                         Sign In
                       </button>
@@ -1253,7 +1279,7 @@ export default function App() {
             <div className="space-y-6">
               <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                 <div>
-                  <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+                  <h2 className="text-2xl font-bold text-blue-600 tracking-tight dark:text-blue-400">
                     Our Core Social Services
                   </h2>
                   <p className="text-xs text-slate-500 mt-1">
@@ -1265,7 +1291,7 @@ export default function App() {
               {/* Grid of services info cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {servicesData.map((service) => (
-                  <div key={service.id} className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs flex flex-col justify-between hover:border-blue-300 hover:shadow-md transition-all">
+                  <div key={service.id} className="bg-white border border-slate-200 rounded-xl p-6 shadow-xs flex flex-col justify-between hover:border-blue-300 hover:shadow-md transition-all dark:bg-slate-900 dark:border-slate-800">
                     <div>
                       <div className="flex justify-between items-start gap-4">
                         <div className="p-3 bg-blue-50 text-blue-700 rounded-xl shrink-0">
@@ -1275,7 +1301,7 @@ export default function App() {
                           {service.id.toUpperCase()}
                         </span>
                       </div>
-                      <h3 className="text-base font-bold text-slate-900 mt-4 leading-tight">
+                      <h3 className="text-base font-bold text-slate-900 mt-4 leading-tight dark:text-white">
                         {service.fullName}
                       </h3>
                       <p className="text-xs text-slate-500 mt-2 leading-relaxed line-clamp-2">
@@ -1306,24 +1332,24 @@ export default function App() {
             </div>
 
             {/* Quick Step Guide */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 shadow-sm">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8 shadow-sm dark:bg-slate-900 dark:border-slate-800">
               <div className="space-y-2">
                 <span className="text-2xl font-black text-blue-700">01.</span>
-                <h3 className="font-bold text-sm text-slate-900">Create Secured Profile</h3>
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Create Secured Profile</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   Register with your official name, municipal residential address, and contact number. We protect your data securely under the Data Privacy Act.
                 </p>
               </div>
               <div className="space-y-2">
                 <span className="text-2xl font-black text-amber-500">02.</span>
-                <h3 className="font-bold text-sm text-slate-900">Upload Requirements</h3>
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Upload Requirements</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   Take a digital photo of your Barangay Indigency, valid government ID, or clinical documents and attach them directly to your application slot.
                 </p>
               </div>
               <div className="space-y-2">
-                <span className="text-2xl font-black text-slate-950">03.</span>
-                <h3 className="font-bold text-sm text-slate-900">Track Review Status</h3>
+                <span className="text-2xl font-black text-green-700">03.</span>
+                <h3 className="font-bold text-sm text-slate-900 dark:text-white">Track Review Status</h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
                   Monitor verification stages and social worker caseworker remarks from your digital portal. Get scheduled for direct payouts.
                 </p>
@@ -1331,16 +1357,16 @@ export default function App() {
             </div>
 
             {/* Live Facebook Updates Feed */}
-            <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 space-y-6 shadow-sm">
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 space-y-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
               <div>
-                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2 dark:text-white">
                   <span className="w-2.5 h-5 bg-blue-700 rounded-full inline-block" /> Live Municipal Announcements & News
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
                   Stay updated with the latest notices, payout schedules, and emergency alerts from our official Facebook feed.
                 </p>
               </div>
-              <div className="rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 min-h-[400px]">
+              <div className="rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 min-h-[400px] dark:bg-slate-950">
                 {/* Elfsight Facebook Feed */}
                 <div className="elfsight-app-7c1854a3-bf46-4d2d-b085-97e08c579d4b" data-elfsight-app-lazy="true"></div>
               </div>
@@ -1356,10 +1382,10 @@ export default function App() {
               <span className="text-xs font-bold text-blue-700 dark:text-blue-400 uppercase tracking-widest bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full border border-blue-100 dark:border-blue-800/40">
                 {translations[language].qualificationsHeader}
               </span>
-              <h2 className="text-3xl md:text-4xl font-black tracking-tight uppercase leading-tight text-slate-900 dark:text-white">
+              <h2 className="text-3xl md:text-4xl font-black tracking-tight uppercase leading-tight text-blue-600 dark:text-blue-400">
                 MSWDO Tubungan Citizen Charter
               </h2>
-              <p className="text-xs md:text-sm text-slate-500 dark:text-slate-400">
+              <p className="text-xs md:text-sm text-blue-600 dark:text-blue-400">
                 {translations[language].qualificationsSub}
               </p>
             </div>
@@ -1396,14 +1422,14 @@ export default function App() {
                 <h4 className="font-bold text-sm text-blue-800 dark:text-blue-400 flex items-center gap-2 uppercase">
                   <ShieldAlert size={16} /> {translations[language].onlyAicsOnline}
                 </h4>
-                <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p className="text-xs text-blue-700 dark:text-blue-400 leading-relaxed font-semibold">
                   {translations[language].onlyAicsOnlineDesc}
                 </p>
               </div>
               <div className="md:col-span-4 flex justify-end">
                 <button
                   onClick={handleApplyClickFromGuide}
-                  className="w-full md:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-1.5 uppercase tracking-wide cursor-pointer"
+                  className="w-full md:w-auto px-6 py-3 bg-blue-600 hover:bg-blue-500 font-bold rounded-xl text-xs transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-1.5 uppercase tracking-wide cursor-pointer dark:text-white text-slate-900"
                 >
                   <ClipboardList size={14} /> {translations[language].applyOnlineNow}
                 </button>
@@ -1423,7 +1449,7 @@ export default function App() {
                     className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden transition-all animate-fade-in"
                   >
                     {/* Header Banner - styled exactly like the beautiful AICS banner */}
-                    <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-6 md:p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-6">
+                    <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 text-white">
                       <div className="flex items-center gap-4">
                         <div className="p-3 bg-white/10 rounded-2xl">
                           <LucideIcon name={iconName} size={32} />
@@ -1440,7 +1466,7 @@ export default function App() {
                       {isAics ? (
                         <button
                           onClick={handleApplyClickFromGuide}
-                          className="px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-white text-xs font-extrabold rounded-xl flex items-center gap-1.5 shadow-md transition-all cursor-pointer self-start md:self-center uppercase tracking-wider"
+                          className="px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-xs font-extrabold rounded-xl flex items-center gap-1.5 shadow-md transition-all cursor-pointer self-start md:self-center uppercase tracking-wider dark:text-white text-slate-900"
                         >
                           {translations[language].applyOnlineNow} <ArrowRight size={14} />
                         </button>
@@ -1546,7 +1572,7 @@ export default function App() {
                 className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden scroll-mt-24 transition-all"
               >
                 {/* Header banner */}
-                <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-6 md:p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="bg-gradient-to-r from-blue-900 to-indigo-900 p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4 text-white">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-white/10 rounded-2xl">
                       <LucideIcon name="Activity" size={32} />
@@ -1562,7 +1588,7 @@ export default function App() {
                   </div>
                   <button
                     onClick={handleApplyClickFromGuide}
-                    className="px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-white text-xs font-extrabold rounded-xl flex items-center gap-1.5 shadow-md transition-all cursor-pointer self-start md:self-center uppercase tracking-wider"
+                    className="px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-xs font-extrabold rounded-xl flex items-center gap-1.5 shadow-md transition-all cursor-pointer self-start md:self-center uppercase tracking-wider dark:text-white text-slate-900"
                   >
                     Apply Online Now <ArrowRight size={14} />
                   </button>
@@ -1683,7 +1709,7 @@ export default function App() {
                 id="program-section-pwd" 
                 className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden scroll-mt-24 transition-all"
               >
-                <div className="bg-gradient-to-r from-emerald-800 to-teal-800 p-6 md:p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="bg-gradient-to-r from-emerald-800 to-teal-800 p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4 text-white">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-white/10 rounded-2xl">
                       <LucideIcon name="Award" size={32} />
@@ -1812,7 +1838,7 @@ export default function App() {
                 id="program-section-senior" 
                 className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden scroll-mt-24 transition-all"
               >
-                <div className="bg-gradient-to-r from-amber-800 to-amber-900 p-6 md:p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="bg-gradient-to-r from-amber-800 to-amber-900 p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4 text-white">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-white/10 rounded-2xl">
                       <LucideIcon name="Users" size={32} />
@@ -1939,7 +1965,7 @@ export default function App() {
                 id="program-section-solo-parent" 
                 className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl overflow-hidden scroll-mt-24 transition-all"
               >
-                <div className="bg-gradient-to-r from-purple-800 to-indigo-800 p-6 md:p-8 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="bg-gradient-to-r from-purple-800 to-indigo-800 p-6 md:p-8 flex flex-col md:flex-row md:items-center justify-between gap-4 text-white">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-white/10 rounded-2xl">
                       <LucideIcon name="HeartHandshake" size={32} />
@@ -2073,7 +2099,7 @@ export default function App() {
               <span className="text-xs font-bold text-blue-700 uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full">
                 Our Mission & Mandate
               </span>
-              <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight uppercase">
+              <h2 className="text-3xl md:text-4xl font-black text-blue-700 tracking-tight uppercase dark:text-blue-400">
                 About MSWDO Tubungan
               </h2>
               <p className="text-xs md:text-sm text-slate-500 max-w-xl mx-auto leading-relaxed">
@@ -2083,21 +2109,21 @@ export default function App() {
 
             {/* Split Sections */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white border border-slate-200 p-6 md:p-8 rounded-2xl shadow-sm space-y-4">
+              <div className="bg-white border border-slate-200 p-6 md:p-8 rounded-2xl shadow-sm space-y-4 dark:bg-slate-900 dark:border-slate-800">
                 <div className="w-12 h-12 bg-blue-50 text-blue-700 rounded-xl flex items-center justify-center">
                   <Sparkles size={24} />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">Our Vision</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Our Vision</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
                   We envision Tubungan as a self-reliant, secure, and empowered community where poor, vulnerable, and disadvantaged individuals, families, and sectors are provided with social protection and opportunities to achieve a better quality of life.
                 </p>
               </div>
 
-              <div className="bg-white border border-slate-200 p-6 md:p-8 rounded-2xl shadow-sm space-y-4">
+              <div className="bg-white border border-slate-200 p-6 md:p-8 rounded-2xl shadow-sm space-y-4 dark:bg-slate-900 dark:border-slate-800">
                 <div className="w-12 h-12 bg-blue-50 text-blue-700 rounded-xl flex items-center justify-center">
                   <Landmark size={24} />
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">Our Mission</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Our Mission</h3>
                 <p className="text-xs text-slate-600 leading-relaxed">
                   To provide immediate social protection and welfare services to Tubungan residents, promoting social integration, capacity building, and livelihood opportunities for senior citizens, solo parents, persons with disabilities, and families in crisis.
                 </p>
@@ -2105,25 +2131,25 @@ export default function App() {
             </div>
 
             {/* Mandate & Governance */}
-            <div className="bg-slate-900 text-white rounded-3xl p-8 space-y-6 shadow-xl relative overflow-hidden">
+            <div className="rounded-3xl p-8 space-y-6 shadow-xl relative overflow-hidden dark:text-white text-slate-900 dark:bg-slate-900 bg-white">
               <div className="absolute right-0 bottom-0 w-64 h-64 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
               <h3 className="text-xl font-bold text-blue-400">Governance & Mandate</h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className="text-xs leading-relaxed dark:text-slate-300 text-slate-600">
                 MSWDO Tubungan operates in accordance with the Local Government Code of 1991 (RA 7160) and national welfare guidelines issued by the Department of Social Welfare and Development (DSWD). We serve as the frontline social protection office, managing local budget allocations, emergency response funding, and social pensions.
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t border-slate-800 text-center">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-4 border-t text-center dark:border-slate-800 border-slate-200">
                 <div>
                   <h4 className="text-2xl font-black text-blue-400">100%</h4>
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mt-1">Data Privacy Protected</p>
+                  <p className="text-[10px] uppercase tracking-wider font-semibold mt-1 dark:text-slate-400 text-slate-500">Data Privacy Protected</p>
                 </div>
                 <div>
                   <h4 className="text-2xl font-black text-blue-400">24 Hours</h4>
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mt-1">Emergency Coordination</p>
+                  <p className="text-[10px] uppercase tracking-wider font-semibold mt-1 dark:text-slate-400 text-slate-500">Emergency Coordination</p>
                 </div>
                 <div>
                   <h4 className="text-2xl font-black text-blue-400">Direct</h4>
-                  <p className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold mt-1">Municipal Assistance</p>
+                  <p className="text-[10px] uppercase tracking-wider font-semibold mt-1 dark:text-slate-400 text-slate-500">Municipal Assistance</p>
                 </div>
               </div>
             </div>
@@ -2138,7 +2164,7 @@ export default function App() {
               <span className="text-xs font-bold text-blue-700 uppercase tracking-widest bg-blue-50 px-3 py-1 rounded-full">
                 Get In Touch
               </span>
-              <h2 className="text-3xl font-black text-slate-900 tracking-tight uppercase">
+              <h2 className="text-3xl font-black text-blue-700 tracking-tight uppercase dark:text-blue-400">
                 Contact Tubungan MSWDO
               </h2>
               <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
@@ -2148,9 +2174,9 @@ export default function App() {
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
               {/* Contact Info Card */}
-              <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm flex flex-col justify-between space-y-6">
+              <div className="lg:col-span-5 bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm flex flex-col justify-between space-y-6 dark:bg-slate-900 dark:border-slate-800">
                 <div className="space-y-6">
-                  <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3">Office Information</h3>
+                  <h3 className="text-lg font-bold text-slate-900 border-b border-slate-100 pb-3 dark:text-white">Office Information</h3>
                   
                   <div className="space-y-4">
                     <div className="flex items-start gap-3.5 text-xs text-slate-600">
@@ -2158,7 +2184,7 @@ export default function App() {
                         <Landmark size={16} />
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900">Main Office Address</p>
+                        <p className="font-bold text-slate-900 dark:text-white">Main Office Address</p>
                         <p className="mt-0.5 leading-relaxed">Municipal Hall Compound, Poblacion, Tubungan, Iloilo, Philippines 5027</p>
                       </div>
                     </div>
@@ -2168,7 +2194,7 @@ export default function App() {
                         <Clock size={16} />
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900">Office Hours</p>
+                        <p className="font-bold text-slate-900 dark:text-white">Office Hours</p>
                         <p className="mt-0.5 leading-relaxed">Monday to Friday<br />8:00 AM - 5:00 PM (except holidays)</p>
                       </div>
                     </div>
@@ -2178,7 +2204,7 @@ export default function App() {
                         <Phone size={16} />
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900">Direct Contact Hotlines</p>
+                        <p className="font-bold text-slate-900 dark:text-white">Direct Contact Hotlines</p>
                         <p className="mt-0.5 font-mono">(02) 8123-4567</p>
                         <p className="font-mono">+63 912 345 6789</p>
                       </div>
@@ -2189,7 +2215,7 @@ export default function App() {
                         <Mail size={16} />
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900">Electronic Support Mail</p>
+                        <p className="font-bold text-slate-900 dark:text-white">Electronic Support Mail</p>
                         <p className="mt-0.5 font-mono text-blue-700 hover:underline">mswdo@municipality.gov.ph</p>
                         <p className="font-mono text-slate-500">tubungan.gov@gmail.com</p>
                       </div>
@@ -2197,20 +2223,20 @@ export default function App() {
                   </div>
                 </div>
 
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 text-[11px] text-slate-500 leading-relaxed">
+                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/60 text-[11px] text-slate-500 leading-relaxed dark:bg-slate-950">
                   <strong>* Walk-In Reminder:</strong> Physical filing of requirements and card registration processes are available daily during standard office hours.
                 </div>
               </div>
 
               {/* Map Column */}
-              <div className="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between">
+              <div className="lg:col-span-7 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm flex flex-col justify-between dark:bg-slate-900 dark:border-slate-800">
                 <div className="space-y-3 mb-4">
-                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 px-2">
+                  <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 px-2 dark:text-slate-100">
                     <span className="w-1.5 h-3.5 bg-blue-700 rounded-full" /> Google Map Location - Tubungan, Iloilo
                   </h3>
                 </div>
                 {/* Embed Map Iframe */}
-                <div className="rounded-xl overflow-hidden border border-slate-200 flex-1 min-h-[350px] relative">
+                <div className="rounded-xl overflow-hidden border border-slate-200 flex-1 min-h-[350px] relative dark:border-slate-800">
                   <iframe 
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3920.316827670984!2d122.28919631527376!3d10.793740992309852!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x33ae567b4ca51cc3%3A0xc3f3454b6c31bfcf!2sTubungan%2C%20Iloilo%2C%20Philippines!5e0!3m2!1sen!2sus!4v1655123456789!5m2!1sen!2sus" 
                     width="100%" 
@@ -2238,13 +2264,13 @@ export default function App() {
                 language={language}
               />
             ) : (
-              <div className="text-center py-16 bg-white border border-neutral-100 rounded-2xl shadow-xl p-8 max-w-xl mx-auto space-y-6">
+              <div className="text-center py-16 bg-white border border-neutral-100 rounded-2xl shadow-xl p-8 max-w-xl mx-auto space-y-6 dark:bg-slate-900 dark:border-slate-800">
                 <div className="w-16 h-16 bg-blue-50 text-blue-700 rounded-full flex items-center justify-center mx-auto">
                   <ShieldAlert size={30} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-neutral-900">Client Login Required</h3>
-                  <p className="text-xs text-neutral-500 mt-2 max-w-sm mx-auto leading-relaxed">
+                  <h3 className="text-lg font-bold text-neutral-900 dark:text-white">Client Login Required</h3>
+                  <p className="text-xs text-neutral-500 mt-2 max-w-sm mx-auto leading-relaxed dark:text-slate-400">
                     Before you can file an official application for Assistance in Crisis Situations, you must log in or create a secured client profile.
                   </p>
                 </div>
@@ -2255,7 +2281,7 @@ export default function App() {
                       setAuthModalInitialTab('login');
                       setIsAuthModalOpen(true);
                     }}
-                    className="px-6 py-2 border border-neutral-300 hover:border-neutral-400 text-neutral-700 rounded-lg text-xs font-bold tracking-wide transition-colors cursor-pointer"
+                    className="px-6 py-2 border border-neutral-300 hover:border-neutral-400 text-neutral-700 rounded-lg text-xs font-bold tracking-wide transition-colors cursor-pointer dark:text-slate-300 dark:border-slate-700"
                   >
                     Login to Account
                   </button>
@@ -2264,7 +2290,7 @@ export default function App() {
                       setAuthModalInitialTab('register');
                       setIsAuthModalOpen(true);
                     }}
-                    className="px-6 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold tracking-wide shadow-md shadow-blue-700/15 transition-all cursor-pointer flex items-center gap-1"
+                    className="px-6 py-2 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-bold tracking-wide shadow-md shadow-blue-700/15 transition-all cursor-pointer flex items-center gap-1 dark:text-white text-slate-900"
                   >
                     Register New Account <ArrowRight size={13} />
                   </button>
@@ -2281,35 +2307,67 @@ export default function App() {
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                   <div>
-                    <h2 className="text-2xl font-black text-neutral-900 tracking-tight">
+                    <h2 className="text-2xl font-black text-blue-600 tracking-tight dark:text-blue-400">
                       My Assistance Applications
                     </h2>
-                    <p className="text-xs text-neutral-500 mt-0.5">
+                    <p className="text-xs text-neutral-500 mt-0.5 dark:text-blue-400">
                       Check timeline updates and download submitted requirements.
                     </p>
                   </div>
-                  <button
-                    onClick={() => setActiveTab('apply')}
-                    className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs"
-                  >
-                    + File New Request
-                  </button>
+                  <div className="flex flex-wrap gap-2 justify-end">
+                    <button
+                      onClick={async () => {
+                        const targetAppId = selectedAppId || (userApplications.length > 0 ? userApplications[0].id : null);
+                        if (!targetAppId) {
+                          showToast('No application selected.', 'info');
+                          return;
+                        }
+
+                        if (confirm("Are you sure you want to cancel and delete this application? This action cannot be undone.")) {
+                          const { error } = await supabase
+                            .from('applications')
+                            .delete()
+                            .eq('id', targetAppId);
+                            
+                          if (error) {
+                            showToast('Failed to delete application.', 'error');
+                            console.error(error);
+                          } else {
+                            setApplications(prev => prev.filter(app => app.id !== targetAppId));
+                            setSelectedAppId(null);
+                            showToast('Application has been deleted successfully.', 'success');
+                          }
+                        }
+                      }}
+                      className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs dark:text-white text-slate-900"
+                    >
+                      Cancel / Delete Application
+                    </button>
+                    <button
+                      onClick={() => setActiveTab('apply')}
+                      className="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-xs font-bold rounded-lg flex items-center gap-1 cursor-pointer transition-colors shadow-xs dark:text-white text-slate-900"
+                    >
+                      + File New Request
+                    </button>
+                  </div>
                 </div>
 
                 <ApplicationTracker 
                   applications={userApplications} 
                   onStatusUpdate={handleStatusUpdate}
                   language={language}
+                  selectedAppId={selectedAppId}
+                  onSelectApp={setSelectedAppId}
                 />
               </div>
             ) : (
-              <div className="text-center py-16 bg-white border border-neutral-100 rounded-2xl shadow-xl p-8 max-w-xl mx-auto space-y-6">
+              <div className="text-center py-16 bg-white border border-neutral-100 rounded-2xl shadow-xl p-8 max-w-xl mx-auto space-y-6 dark:bg-slate-900 dark:border-slate-800">
                 <div className="w-16 h-16 bg-blue-50 text-blue-700 rounded-full flex items-center justify-center mx-auto">
                   <BookOpen size={30} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-neutral-900">Access Restricted</h3>
-                  <p className="text-xs text-neutral-500 mt-2 max-w-sm mx-auto leading-relaxed">
+                  <h3 className="text-lg font-bold text-neutral-900 dark:text-white">Access Restricted</h3>
+                  <p className="text-xs text-neutral-500 mt-2 max-w-sm mx-auto leading-relaxed dark:text-slate-400">
                     Please log in or register a client profile to track previously filed social welfare assistance cases and status updates.
                   </p>
                 </div>
@@ -2320,7 +2378,7 @@ export default function App() {
                       setAuthModalInitialTab('login');
                       setIsAuthModalOpen(true);
                     }}
-                    className="px-6 py-2 border border-neutral-300 hover:border-neutral-400 text-neutral-700 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                    className="px-6 py-2 border border-neutral-300 hover:border-neutral-400 text-neutral-700 rounded-lg text-xs font-bold transition-all cursor-pointer dark:text-slate-300 dark:border-slate-700"
                   >
                     Login to Account
                   </button>
@@ -2329,7 +2387,7 @@ export default function App() {
                       setAuthModalInitialTab('register');
                       setIsAuthModalOpen(true);
                     }}
-                    className="px-6 py-2 bg-blue-700 hover:bg-blue-800 text-white rounded-lg text-xs font-bold shadow-md shadow-blue-700/15 transition-all cursor-pointer"
+                    className="px-6 py-2 bg-blue-700 hover:bg-blue-800 rounded-lg text-xs font-bold shadow-md shadow-blue-700/15 transition-all cursor-pointer dark:text-white text-slate-900"
                   >
                     Register New Profile
                   </button>
@@ -2341,13 +2399,13 @@ export default function App() {
       </main>
 
       {/* Interactive Footer */}
-      <footer className="bg-white border-t border-slate-200 mt-16 py-6 px-10 text-[10px] text-slate-400 shrink-0">
+      <footer className="bg-white border-t border-slate-200 mt-16 py-6 px-10 text-[10px] shrink-0 dark:text-slate-400 text-slate-500 dark:bg-slate-900 dark:border-slate-800">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="space-y-1 text-center sm:text-left">
             <p>&copy; 2024 MSWDO Portal System. All rights reserved.</p>
             <p className="text-slate-500 uppercase tracking-wider font-semibold text-[9px]">Municipal Social Welfare & Development Office</p>
           </div>
-          <div className="flex space-x-6 font-semibold text-slate-400">
+          <div className="flex space-x-6 font-semibold dark:text-slate-400 text-slate-500">
             <span>Security: SSL Encrypted</span>
             <span>Version 2.4.1</span>
           </div>
